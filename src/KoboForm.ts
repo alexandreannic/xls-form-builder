@@ -1,4 +1,5 @@
 import writeXlsxFile from 'write-excel-file/node'
+import {Utils} from './Utils'
 
 export type QuestionTypeWithOptions = 'CHECKBOX' | 'RADIO'
 export type QuestionTypeWithoutOptions = 'TEXT' | 'TEXTAREA' | 'DATE' | 'NUMBER' | 'TITLE'
@@ -42,17 +43,22 @@ interface Section {
   questions: () => Question[]
 }
 
+export interface KoboChoices {
+  list_name: string
+  name: string
+  label: string
+}
+
 export class KoboForm {
   private titlesIndex = 0
   private subTitlesIndex = 'a'
   private questionIndex = 0
-  collectedOptions: string[][] = []
+  collectedOptions: {[key: string]: string[]} = {}
 
   constructor() {
   }
 
-  static readonly printForm = (k: KoboQuestion[], options: string[][]) => {
-    console.log(k)
+  static readonly printForm = (k: KoboQuestion[], options: KoboChoices[]) => {
     writeXlsxFile([k, options.map(_ => ({label: _}))], {
       sheets: ['survey', 'choices'],
       schema: [[
@@ -90,11 +96,13 @@ export class KoboForm {
 
   readonly section = (label: string, questions: () => Question[]): Section => {
     this.subTitlesIndex = 'a'
-    return {label: `${this.titlesIndex++}. label`, questions: questions}
+    return {label: `${++this.titlesIndex}. ${label}`, questions: questions}
   }
 
   readonly title = (label: string, conf?: QuestionConf) => {
-    return this.question('TITLE', label)
+    const subTitles = this.subTitlesIndex
+    this.subTitlesIndex = Utils.nextChar(this.subTitlesIndex)
+    return this.question('TITLE', `${this.titlesIndex}.${subTitles} ${label}`, conf)
   }
 
   readonly question = (type: QuestionTypeWithoutOptions, label: string, conf?: QuestionConf): Question => {
@@ -152,6 +160,10 @@ export class KoboForm {
       .toLocaleLowerCase() + ('_' + this.questionIndex++)
   }
 
+  private static readonly mapKoboChoices = (options: string[][]): KoboQuestionType => {
+
+  }
+
   private static readonly mapQuestionTypeToKobo = (t: QuestionType): KoboQuestionType => {
     switch (t) {
       case 'DATE':
@@ -162,6 +174,8 @@ export class KoboForm {
         return 'select_one'
       case 'NUMBER':
         return 'decimal'
+      case 'TITLE':
+        return 'note'
       default:
         return 'text'
     }

@@ -20,7 +20,7 @@ export class Utils {
       .replaceAll('éè', 'e')
       .replaceAll('à', 'a')
       .replaceAll('ù', 'u')
-      .replaceAll(/[^a-z_]/g, '')
       .toLocaleLowerCase()
+      .replaceAll(/[^a-z_]/g, '')
   }
 }

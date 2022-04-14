@@ -3,7 +3,7 @@ import {KoboForm} from '../KoboForm'
 export class FormBIA {
 
   constructor(private k = new KoboForm()) {
-    const x = k.generateForm([
+    const [survey, choices] = k.generateForm([
       k.section('General', () => {
         return [
           k.questionRadio('Priority case', ['High', 'Medium', 'Low']),
@@ -33,7 +33,7 @@ export class FormBIA {
       })
     ])
     console.log('print xls')
-    KoboForm.printForm(x, k.collectedOptions)
+    KoboForm.printForm(survey, choices)
   }
 
 }

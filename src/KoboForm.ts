@@ -78,20 +78,23 @@ export class KoboForm {
     })
   }
 
-  readonly generateForm = (sections: Section[]): KoboQuestion[] => {
-    return sections.flatMap(s => [
-      {
-        type: 'begin_group',
-        name: this.generateName(`group_${s.label}`),
-        label: s.label
-      },
-      ...s.questions().map(KoboForm.mapQuestionToKobo),
-      {
-        type: 'end_group',
-        name: '',
-        label: '',
-      },
-    ])
+  readonly generateForm = (sections: Section[]): [KoboQuestion[], KoboChoices[]] => {
+    return [
+      sections.flatMap(s => [
+        {
+          type: 'begin_group',
+          name: Utils.sanitizeString(`group_${s.label}`),
+          label: s.label
+        },
+        ...s.questions().map(KoboForm.mapQuestionToKobo),
+        {
+          type: 'end_group',
+          name: '',
+          label: '',
+        },
+      ]),
+      KoboForm.mapKoboChoices(this.collectedOptions)
+    ]
   }
 
   readonly section = (label: string, questions: () => Question[]): Section => {
@@ -108,7 +111,7 @@ export class KoboForm {
   readonly question = (type: QuestionTypeWithoutOptions, label: string, conf?: QuestionConf): Question => {
     return {
       type,
-      name: this.generateName(label),
+      name: this.generateQuestionName(label),
       label,
       hint: conf?.hint,
       required: conf?.required,
@@ -117,9 +120,14 @@ export class KoboForm {
   }
 
   readonly questionRadio = (label: string, options: string[], conf?: QuestionConf): Question => {
+    return this.questionMultiple('RADIO', label, options, conf)
+  }
+
+  private readonly questionMultiple = (type: QuestionTypeWithOptions, label: string, options: string[], conf?: QuestionConf): Question => {
+    this.collectedOptions[Utils.makeid()] = options
     return {
       type: 'RADIO',
-      name: this.generateName(label),
+      name: this.generateQuestionName(label),
       label,
       options,
       hint: conf?.hint,
@@ -128,16 +136,12 @@ export class KoboForm {
     }
   }
 
+  private readonly generateQuestionName = (label: string): string => {
+    return Utils.sanitizeString(label) + '_' + this.questionIndex++
+  }
+
   readonly questionCb = (label: string, options: string[], conf?: QuestionConf): Question => {
-    return {
-      type: 'CHECKBOX',
-      name: this.generateName(label),
-      label,
-      options,
-      hint: conf?.hint,
-      required: conf?.required,
-      showIf: conf?.showIf,
-    }
+    return this.questionMultiple('CHECKBOX', label, options, conf)
   }
 
   readonly questionRadioWithSpecify = (label: string, options: {label: string, specify?: boolean}[]): Question[] => {
@@ -149,19 +153,14 @@ export class KoboForm {
     return [radio, ...specifyInputs]
   }
 
-  private readonly generateName = (label: string): string => {
-    return label
-      .replaceAll(/\s/g, '_')
-      .replaceAll('\'', '_')
-      .replaceAll('éè', 'e')
-      .replaceAll('à', 'a')
-      .replaceAll('ù', 'u')
-      .replaceAll(/[^a-z_]/g, '')
-      .toLocaleLowerCase() + ('_' + this.questionIndex++)
-  }
-
-  private static readonly mapKoboChoices = (options: string[][]): KoboQuestionType => {
-
+  private static readonly mapKoboChoices = (options: {[key: string]: string[]}): KoboChoices[] => {
+    return Object.entries(options).flatMap(([key, options]) => {
+      return options.map(option => ({
+        list_name: key,
+        name: Utils.sanitizeString(option),
+        label: option,
+      }))
+    })
   }
 
   private static readonly mapQuestionTypeToKobo = (t: QuestionType): KoboQuestionType => {

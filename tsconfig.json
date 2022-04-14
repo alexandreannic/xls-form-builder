@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "typeRoots": [
+      "./@types",
+      "./node_modules/@types"
+    ],
+    "target": "ESNext",
+    "module": "commonjs",
+    "declaration": true,
+    "sourceMap": true,
+    "outDir": "./lib",
+    "resolveJsonModule": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "baseUrl": "./",
+    "paths": {
+      "*" : ["@types/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.json"
+  ]
+}

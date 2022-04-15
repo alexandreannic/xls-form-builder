@@ -1,5 +1,5 @@
 import {Form, Question, QuestionConf} from '../core/Form'
-import {KoboFormBuilder} from '../core/KoboFormBuilder'
+import {XLSFormFormBuilder} from '../core/XLSFormFormBuilder'
 import {Common} from './Common'
 
 export const formBIA = () => {
@@ -10,7 +10,7 @@ export const formBIA = () => {
     {label: 'Not willing to disclose',},
     {label: 'Other (specify)', specify: true},
   ], conf)
-  new KoboFormBuilder().buildAndCreateXLS({title: 'BIA Form'}, [
+  new XLSFormFormBuilder().buildAndCreateXLS({title: 'BIA Form'}, [
     k.section('General', () => {
       return [
         Common.priorityRate(k),

@@ -2,15 +2,15 @@ import {Utils} from './Utils'
 import {Choice, Question, QuestionType, Section} from './Form'
 import writeXlsxFile from 'write-excel-file/node'
 
-export interface KoboChoices {
+export interface XLSFormChoices {
   list_name: string
   name: string
   label: string
 }
 
-type KoboQuestionType = 'end_group' | 'begin_group' | 'text' | 'select_multiple' | 'select_one' | 'decimal' | 'date' | 'note'
+type XLSFormQuestionType = 'end_group' | 'begin_group' | 'text' | 'select_multiple' | 'select_one' | 'decimal' | 'date' | 'note'
 
-interface KoboQuestion {
+interface XLSFormQuestion {
   type: string
   name: string
   label: string
@@ -20,22 +20,22 @@ interface KoboQuestion {
   guidance_hint?: string
 }
 
-export interface KoboFormBuilderProps {
+export interface XLSFormFormBuilderProps {
   title: string
   path?: string
   version?: string
 }
 
-export class KoboFormBuilder {
+export class XLSFormFormBuilder {
   private collectedOptions: {[key: string]: Choice[]} = {}
   private titlesIndex = 0
   private subTitlesIndex = 'a'
 
-  readonly buildAndCreateXLS = (params: KoboFormBuilderProps, sections: Section[]) => {
-    KoboFormBuilder.createXLS(params, ...this.buildForm(sections))
+  readonly buildAndCreateXLS = (params: XLSFormFormBuilderProps, sections: Section[]) => {
+    XLSFormFormBuilder.createXLS(params, ...this.buildForm(sections))
   }
 
-  private static readonly createXLS = (params: KoboFormBuilderProps, k: KoboQuestion[], options: KoboChoices[]) => {
+  private static readonly createXLS = (params: XLSFormFormBuilderProps, k: XLSFormQuestion[], options: XLSFormChoices[]) => {
     writeXlsxFile([
       k,
       options,
@@ -43,26 +43,26 @@ export class KoboFormBuilder {
     ], {
       sheets: ['survey', 'choices', 'settings'],
       schema: [[
-        {column: 'type', type: String, value: _ => (_ as unknown as KoboQuestion).type},
-        {column: 'name', type: String, value: _ => (_ as unknown as KoboQuestion).name},
-        {column: 'label', type: String, value: _ => (_ as unknown as KoboQuestion).label},
-        {column: 'required', type: String, value: _ => (_ as unknown as KoboQuestion).required ? 'true' : 'false'},
-        {column: 'relevant', type: String, value: _ => (_ as unknown as KoboQuestion).relevant ?? ''},
-        {column: 'appearance', type: String, value: _ => (_ as unknown as KoboQuestion).appearance ?? ''},
-        {column: 'guidance_hint', type: String, value: _ => (_ as unknown as KoboQuestion).guidance_hint ?? ''},
+        {column: 'type', type: String, value: _ => (_ as unknown as XLSFormQuestion).type},
+        {column: 'name', type: String, value: _ => (_ as unknown as XLSFormQuestion).name},
+        {column: 'label', type: String, value: _ => (_ as unknown as XLSFormQuestion).label},
+        {column: 'required', type: String, value: _ => (_ as unknown as XLSFormQuestion).required ? 'true' : 'false'},
+        {column: 'relevant', type: String, value: _ => (_ as unknown as XLSFormQuestion).relevant ?? ''},
+        {column: 'appearance', type: String, value: _ => (_ as unknown as XLSFormQuestion).appearance ?? ''},
+        {column: 'guidance_hint', type: String, value: _ => (_ as unknown as XLSFormQuestion).guidance_hint ?? ''},
       ], [
-        {column: 'list_name', type: String, value: _ => (_ as unknown as KoboChoices).list_name},
-        {column: 'name', type: String, value: _ => (_ as unknown as KoboChoices).name},
-        {column: 'label', type: String, value: _ => (_ as unknown as KoboChoices).label},
+        {column: 'list_name', type: String, value: _ => (_ as unknown as XLSFormChoices).list_name},
+        {column: 'name', type: String, value: _ => (_ as unknown as XLSFormChoices).name},
+        {column: 'label', type: String, value: _ => (_ as unknown as XLSFormChoices).label},
       ], [
         {column: 'form_title', type: String, value: (_: any) => _.form_title},
         {column: 'version', type: String, value: (_: any) => _.version},
       ]],
-      filePath: params.path ?? '/Users/pui/WebstormProjects/koboform/' + Utils.sanitizeString(params.title) + '.xls'
+      filePath: params.path ?? '/Users/pui/WebstormProjects/xls-form-builder/output' + Utils.sanitizeString(params.title) + '.xls'
     })
   }
 
-  private readonly buildForm = (sections: Section[]): [KoboQuestion[], KoboChoices[]] => {
+  private readonly buildForm = (sections: Section[]): [XLSFormQuestion[], XLSFormChoices[]] => {
     return [
       sections.flatMap(s => {
         this.subTitlesIndex = 'a'
@@ -96,7 +96,7 @@ export class KoboFormBuilder {
               }
               return q
             })
-            .map(KoboFormBuilder.mapQuestionToKobo),
+            .map(XLSFormFormBuilder.mapQuestionToXLSForm),
           {
             type: 'end_group',
             name: '',
@@ -104,11 +104,11 @@ export class KoboFormBuilder {
           },
         ]
       }),
-      KoboFormBuilder.mapKoboChoices(this.collectedOptions)
+      XLSFormFormBuilder.mapXLSFormChoices(this.collectedOptions)
     ]
   }
 
-  private static readonly mapKoboChoices = (options: {[key: string]: Choice[]}): KoboChoices[] => {
+  private static readonly mapXLSFormChoices = (options: {[key: string]: Choice[]}): XLSFormChoices[] => {
     return Object.entries(options).flatMap(([key, options]) => {
       return options.map(option => ({
         list_name: key,
@@ -118,7 +118,7 @@ export class KoboFormBuilder {
     })
   }
 
-  private static readonly mapQuestionTypeToKobo = (t: QuestionType): KoboQuestionType => {
+  private static readonly mapQuestionTypeToXLSForm = (t: QuestionType): XLSFormQuestionType => {
     switch (t) {
       case 'DATE':
         return 'date'
@@ -136,9 +136,9 @@ export class KoboFormBuilder {
     }
   }
 
-  private static readonly mapQuestionToKobo = (t: Question): KoboQuestion => {
+  private static readonly mapQuestionToXLSForm = (t: Question): XLSFormQuestion => {
     return {
-      type: KoboFormBuilder.mapQuestionTypeToKobo(t.type) + (t.optionsId ? ' ' + t.optionsId : ' '),
+      type: XLSFormFormBuilder.mapQuestionTypeToXLSForm(t.type) + (t.optionsId ? ' ' + t.optionsId : ' '),
       name: t.name,
       label: t.label,
       required: t.required,

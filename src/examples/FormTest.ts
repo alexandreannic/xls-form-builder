@@ -1,9 +1,9 @@
-import {KoboFormBuilder} from '../core/KoboFormBuilder'
+import {XLSFormFormBuilder} from '../core/XLSFormFormBuilder'
 import {Form} from '../core/Form'
 
 export const formTest = () => {
   const k = new Form()
-  new KoboFormBuilder().buildAndCreateXLS({title: 'Test'}, [
+  new XLSFormFormBuilder().buildAndCreateXLS({title: 'Test'}, [
     k.section('s1', () => {
       const q1 = k.questionWithChoices('CHECKBOX', 'q1', ['o1', 'o2', 'o3'])
       return [

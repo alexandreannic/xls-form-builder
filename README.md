@@ -25,8 +25,8 @@ new XLSFormBuilder().buildAndCreateXLS({title: 'Test'}, [
       k.question('TEXT', 'Question 2', {
         showIfType: 'or',
         showIf: [
-          {questionName: q1.name, valueName: 'Option 1'},
-          {questionName: q1.name, valueName: 'Option 2'},
+          {questionName: q1.name, valueName: q1.options.find(_ => _.label === 'Option 1').name},
+          {questionName: q1.name, valueName: q1.options.find(_ => _.label === 'Option 2').name},
         ]
       })
     ]

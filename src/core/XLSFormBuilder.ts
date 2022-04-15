@@ -20,22 +20,22 @@ interface XLSFormQuestion {
   guidance_hint?: string
 }
 
-export interface XLSFormFormBuilderProps {
+export interface XLSFormBuilderProps {
   title: string
   path?: string
   version?: string
 }
 
-export class XLSFormFormBuilder {
+export class XLSFormBuilder {
   private collectedOptions: {[key: string]: Choice[]} = {}
   private titlesIndex = 0
   private subTitlesIndex = 'a'
 
-  readonly buildAndCreateXLS = (params: XLSFormFormBuilderProps, sections: Section[]) => {
-    XLSFormFormBuilder.createXLS(params, ...this.buildForm(sections))
+  readonly buildAndCreateXLS = (params: XLSFormBuilderProps, sections: Section[]) => {
+    XLSFormBuilder.createXLS(params, ...this.buildForm(sections))
   }
 
-  private static readonly createXLS = (params: XLSFormFormBuilderProps, k: XLSFormQuestion[], options: XLSFormChoices[]) => {
+  private static readonly createXLS = (params: XLSFormBuilderProps, k: XLSFormQuestion[], options: XLSFormChoices[]) => {
     writeXlsxFile([
       k,
       options,
@@ -96,7 +96,7 @@ export class XLSFormFormBuilder {
               }
               return q
             })
-            .map(XLSFormFormBuilder.mapQuestionToXLSForm),
+            .map(XLSFormBuilder.mapQuestionToXLSForm),
           {
             type: 'end_group',
             name: '',
@@ -104,7 +104,7 @@ export class XLSFormFormBuilder {
           },
         ]
       }),
-      XLSFormFormBuilder.mapXLSFormChoices(this.collectedOptions)
+      XLSFormBuilder.mapXLSFormChoices(this.collectedOptions)
     ]
   }
 
@@ -138,7 +138,7 @@ export class XLSFormFormBuilder {
 
   private static readonly mapQuestionToXLSForm = (t: Question): XLSFormQuestion => {
     return {
-      type: XLSFormFormBuilder.mapQuestionTypeToXLSForm(t.type) + (t.optionsId ? ' ' + t.optionsId : ' '),
+      type: XLSFormBuilder.mapQuestionTypeToXLSForm(t.type) + (t.optionsId ? ' ' + t.optionsId : ' '),
       name: t.name,
       label: t.label,
       required: t.required,

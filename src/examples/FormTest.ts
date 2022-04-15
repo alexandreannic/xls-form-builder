@@ -1,9 +1,9 @@
-import {XLSFormFormBuilder} from '../core/XLSFormFormBuilder'
+import {XLSFormBuilder} from '../core/XLSFormBuilder'
 import {Form} from '../core/Form'
 
 export const formTest = () => {
   const k = new Form()
-  new XLSFormFormBuilder().buildAndCreateXLS({title: 'Test'}, [
+  new XLSFormBuilder().buildAndCreateXLS({title: 'Test'}, [
     k.section('s1', () => {
       const q1 = k.questionWithChoices('CHECKBOX', 'q1', ['o1', 'o2', 'o3'])
       return [

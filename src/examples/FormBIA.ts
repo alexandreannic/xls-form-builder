@@ -1,5 +1,5 @@
-import {Form, Question, QuestionConf} from '../core/Form'
-import {XLSFormFormBuilder} from '../core/XLSFormFormBuilder'
+import {Form, QuestionConf} from '../core/Form'
+import {XLSFormBuilder} from '../core/XLSFormBuilder'
 import {Common} from './Common'
 
 export const formBIA = () => {
@@ -10,7 +10,7 @@ export const formBIA = () => {
     {label: 'Not willing to disclose',},
     {label: 'Other (specify)', specify: true},
   ], conf)
-  new XLSFormFormBuilder().buildAndCreateXLS({title: 'BIA Form'}, [
+  new XLSFormBuilder().buildAndCreateXLS({title: 'BIA Form'}, [
     k.section('General', () => {
       return [
         Common.priorityRate(k),

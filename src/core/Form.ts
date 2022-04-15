@@ -53,7 +53,7 @@ export interface Section {
 }
 
 export class Form {
-  private questionIndex = 0
+  private questionIndex = 1
 
   readonly section = (label: string, questions: () => Question[]): Section => {
     return {label, questions}
@@ -75,23 +75,28 @@ export class Form {
   //   }
   // }
 
-  readonly question = (type: QuestionTypeWithoutOptions, label: string, conf?: QuestionConf): Question => {
+  private readonly registerQuestion = (q: Omit<Question, 'name'>): Question => {
     return {
-      type,
-      name: Utils.sanitizeString(label) + '_' + this.questionIndex++,
-      label,
-      ...conf,
+      ...q,
+      name: Utils.sanitizeString(q.label) + '_' + this.questionIndex++,
     }
   }
 
+  readonly question = (type: QuestionTypeWithoutOptions, label: string, conf?: QuestionConf): Question => {
+    return this.registerQuestion({
+      type,
+      label,
+      ...conf,
+    })
+  }
+
   readonly questionWithChoices = (type: QuestionTypeWithChoices, label: string, options: string[], conf?: QuestionConf): Question => {
-    return {
+    return this.registerQuestion({
       type: type,
-      name: Utils.sanitizeString(label),
       label,
       options: options.map(_ => ({label: _, name: Utils.sanitizeString(_)})),
       ...conf,
-    }
+    })
   }
 
   readonly questionWithChoicesAndSpecify = (

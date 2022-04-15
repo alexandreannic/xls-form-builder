@@ -21,6 +21,6 @@ export class Utils {
       .replaceAll('à', 'a')
       .replaceAll('ù', 'u')
       .toLocaleLowerCase()
-      .replaceAll(/[^a-z_]/g, '')
+      .replaceAll(/[^a-z0-9_]/g, '')
   }
 }

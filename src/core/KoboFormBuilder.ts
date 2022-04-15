@@ -1,5 +1,5 @@
 import {Utils} from './Utils'
-import {Question, QuestionType, Section} from './Form'
+import {Choice, Question, QuestionType, Section} from './Form'
 import writeXlsxFile from 'write-excel-file/node'
 
 export interface KoboChoices {
@@ -20,19 +20,28 @@ interface KoboQuestion {
   guidance_hint?: string
 }
 
+export interface KoboFormBuilderProps {
+  title: string
+  path?: string
+  version?: string
+}
+
 export class KoboFormBuilder {
-  private collectedOptions: {[key: string]: string[]} = {}
+  private collectedOptions: {[key: string]: Choice[]} = {}
   private titlesIndex = 0
   private subTitlesIndex = 'a'
-  private questionIndex = 0
 
-  readonly buildAndCreateXLS = (sections: Section[]) => {
-    KoboFormBuilder.createXLS(...this.buildForm(sections))
+  readonly buildAndCreateXLS = (params: KoboFormBuilderProps, sections: Section[]) => {
+    KoboFormBuilder.createXLS(params, ...this.buildForm(sections))
   }
 
-  private static readonly createXLS = (k: KoboQuestion[], options: KoboChoices[]) => {
-    writeXlsxFile([k, options], {
-      sheets: ['survey', 'choices'],
+  private static readonly createXLS = (params: KoboFormBuilderProps, k: KoboQuestion[], options: KoboChoices[]) => {
+    writeXlsxFile([
+      k,
+      options,
+      [{form_title: params.title, version: `${params.version ?? 1} (${new Date().toUTCString()})`}]
+    ], {
+      sheets: ['survey', 'choices', 'settings'],
       schema: [[
         {column: 'type', type: String, value: _ => (_ as unknown as KoboQuestion).type},
         {column: 'name', type: String, value: _ => (_ as unknown as KoboQuestion).name},
@@ -45,8 +54,11 @@ export class KoboFormBuilder {
         {column: 'list_name', type: String, value: _ => (_ as unknown as KoboChoices).list_name},
         {column: 'name', type: String, value: _ => (_ as unknown as KoboChoices).name},
         {column: 'label', type: String, value: _ => (_ as unknown as KoboChoices).label},
+      ], [
+        {column: 'form_title', type: String, value: (_: any) => _.form_title},
+        {column: 'version', type: String, value: (_: any) => _.version},
       ]],
-      filePath: '/Users/pui/WebstormProjects/koboform/test.xls'
+      filePath: params.path ?? '/Users/pui/WebstormProjects/koboform/' + Utils.sanitizeString(params.title) + '.xls'
     })
   }
 
@@ -70,12 +82,18 @@ export class KoboFormBuilder {
               return q
             })
             .map(q => {
-              if (q.type === 'TITLE') {
-                const subTitles = this.subTitlesIndex
-                this.subTitlesIndex = Utils.nextChar(this.subTitlesIndex)
-                q.label = `${this.titlesIndex}.${subTitles} ${q.label}`
+              switch (q.type) {
+                case 'TITLE': {
+                  const subTitles = this.subTitlesIndex
+                  this.subTitlesIndex = Utils.nextChar(this.subTitlesIndex)
+                  q.label = `####${this.titlesIndex}.${subTitles}. ${q.label}`
+                  break
+                }
+                case 'NOTE': {
+                  q.label = `*${q.label}*`
+                  break
+                }
               }
-              q.label = q.label + '_' + this.questionIndex++
               return q
             })
             .map(KoboFormBuilder.mapQuestionToKobo),
@@ -90,12 +108,12 @@ export class KoboFormBuilder {
     ]
   }
 
-  private static readonly mapKoboChoices = (options: {[key: string]: string[]}): KoboChoices[] => {
+  private static readonly mapKoboChoices = (options: {[key: string]: Choice[]}): KoboChoices[] => {
     return Object.entries(options).flatMap(([key, options]) => {
       return options.map(option => ({
         list_name: key,
-        name: Utils.sanitizeString(option),
-        label: option,
+        name: option.name,
+        label: option.label,
       }))
     })
   }
@@ -111,6 +129,7 @@ export class KoboFormBuilder {
       case 'NUMBER':
         return 'decimal'
       case 'TITLE':
+      case 'NOTE':
         return 'note'
       default:
         return 'text'
@@ -123,7 +142,7 @@ export class KoboFormBuilder {
       name: t.name,
       label: t.label,
       required: t.required,
-      relevant: t.showIf ? `selected(\${${t.showIf[0].questionName}}, '${t.showIf[0].value}')` : undefined,
+      relevant: t.showIf ? t.showIf.map(_ => `\${${_.questionName}}${_.eq === 'neq' ? '!=' : '='}'${_.valueName}'`).join(` ${t.showIfType ?? 'and'} `) : undefined,
       appearance: t.type === 'TEXTAREA' ? 'multiline' : undefined,
       guidance_hint: t.hint,
     }

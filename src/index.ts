@@ -1,4 +1,6 @@
-import {FormBIA} from './forms/FormBIA'
+import {formTest} from './examples/FormTest'
+import {formBIA} from './examples/FormBIA'
 
 console.log('Start...')
-new FormBIA()
+// testForm()
+formBIA()

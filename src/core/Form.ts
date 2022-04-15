@@ -1,4 +1,3 @@
-import writeXlsxFile from 'write-excel-file/node'
 import {Utils} from './Utils'
 
 export type QuestionTypeWithChoices = 'CHECKBOX' | 'RADIO'
@@ -7,8 +6,11 @@ export type QuestionType = QuestionTypeWithChoices | QuestionTypeWithoutOptions
 
 export interface ShowIf {
   questionName: string
-  value: string
+  valueName: string
+  eq?: 'eq' | 'neq'
 }
+
+type ShowIfType = 'and' | 'or'
 
 export interface Question {
   name: string
@@ -18,13 +20,31 @@ export interface Question {
   hint?: string
   required?: boolean
   showIf?: ShowIf[]
-  options?: string[]
+  showIfType?: ShowIfType
+  options?: Choice[]
+}
+
+// export interface QuestionDraft {
+//   type: QuestionType
+//   optionsId?: string
+//   label: string
+//   hint?: string
+//   required?: boolean
+//   showIf?: ShowIf[]
+//   showIfType?: ShowIfType
+//   options?: string[]
+// }
+
+export interface Choice {
+  label: string
+  name: string
 }
 
 export interface QuestionConf {
   required?: boolean
   showIf?: ShowIf[]
   hint?: string
+  showIfType?: ShowIfType
 }
 
 export interface Section {
@@ -33,6 +53,7 @@ export interface Section {
 }
 
 export class Form {
+  private questionIndex = 0
 
   readonly section = (label: string, questions: () => Question[]): Section => {
     return {label, questions}
@@ -46,42 +67,43 @@ export class Form {
     return this.question('TITLE', label, conf)
   }
 
+  // readonly add = (q: QuestionDraft): Question => {
+  //   return {
+  //     ...q,
+  //     name: Utils.sanitizeString(q.label) + '_' + this.questionIndex++,
+  //     options: q.options?.map(_ => ({label: _, name: Utils.sanitizeString(_)})),
+  //   }
+  // }
+
   readonly question = (type: QuestionTypeWithoutOptions, label: string, conf?: QuestionConf): Question => {
     return {
       type,
-      name: Utils.sanitizeString(label),
+      name: Utils.sanitizeString(label) + '_' + this.questionIndex++,
       label,
-      hint: conf?.hint,
-      required: conf?.required,
-      showIf: conf?.showIf,
+      ...conf,
     }
-  }
-
-  readonly questionRadio = (label: string, options: string[], conf?: QuestionConf): Question => {
-    return this.questionWithChoices('RADIO', label, options, conf)
   }
 
   readonly questionWithChoices = (type: QuestionTypeWithChoices, label: string, options: string[], conf?: QuestionConf): Question => {
     return {
-      type: 'RADIO',
+      type: type,
       name: Utils.sanitizeString(label),
       label,
-      options,
-      hint: conf?.hint,
-      required: conf?.required,
-      showIf: conf?.showIf,
+      options: options.map(_ => ({label: _, name: Utils.sanitizeString(_)})),
+      ...conf,
     }
   }
 
-  readonly questionCb = (label: string, options: string[], conf?: QuestionConf): Question => {
-    return this.questionWithChoices('CHECKBOX', label, options, conf)
-  }
-
-  readonly questionWithChoicesAndSpecify = (type: QuestionTypeWithChoices, label: string, options: {label: string, specify?: boolean}[]): Question[] => {
-    const radio = this.questionWithChoices(type, label, options.map(_ => _.label))
-    const optionsToSpecify = options.filter(_ => _.specify === true).map(_ => _.label)
-    const specifyInputs = optionsToSpecify.map(label => {
-      return this.question('TEXT', label, {required: true, showIf: [{questionName: radio.name, value: Utils.sanitizeString(label)}]})
+  readonly questionWithChoicesAndSpecify = (
+    type: QuestionTypeWithChoices,
+    label: string,
+    options: {label: string, specify?: boolean, specifyLabel?: string}[],
+    conf?: QuestionConf,
+  ): Question[] => {
+    const radio = this.questionWithChoices(type, label, options.map(_ => _.label), conf)
+    const optionsToSpecify = options.filter(_ => _.specify === true)
+    const specifyInputs = optionsToSpecify.map(_ => {
+      return this.question('TEXT', _.specifyLabel ?? 'Please specify', {showIf: [{questionName: radio.name, valueName: Utils.sanitizeString(_.label)}]})
     })
     return [radio, ...specifyInputs]
   }

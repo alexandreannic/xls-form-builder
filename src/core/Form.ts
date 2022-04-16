@@ -5,8 +5,8 @@ export type QuestionTypeWithoutOptions = 'TEXT' | 'TEXTAREA' | 'DATE' | 'NUMBER'
 export type QuestionType = QuestionTypeWithChoices | QuestionTypeWithoutOptions
 
 export interface ShowIf {
-  questionName: string
-  valueName: string
+  question: Question
+  value: string
   eq?: 'eq' | 'neq'
 }
 
@@ -14,6 +14,7 @@ type ShowIfType = 'and' | 'or'
 
 export interface Question {
   name: string
+  default?: string
   type: QuestionType
   optionsId?: string
   label: string
@@ -40,12 +41,12 @@ export interface Choice {
   name: string
 }
 
-export interface QuestionConf {
-  required?: boolean
-  showIf?: ShowIf[]
-  hint?: string
-  showIfType?: ShowIfType
-}
+export type QuestionConf = Omit<Question, 'label' | 'name' | 'type' | 'optionsId' | 'options'>
+// required?: boolean
+// showIf?: ShowIf[]
+// hint?: string
+// showIfType?: ShowIfType
+// }
 
 export interface Section {
   label: string
@@ -108,7 +109,9 @@ export class Form {
     const radio = this.questionWithChoices(type, label, options.map(_ => _.label), conf)
     const optionsToSpecify = options.filter(_ => _.specify === true)
     const specifyInputs = optionsToSpecify.map(_ => {
-      return this.question('TEXT', _.specifyLabel ?? 'Please specify', {showIf: [{questionName: radio.name, valueName: Utils.sanitizeString(_.label)}]})
+      return this.question('TEXT', _.specifyLabel ?? 'Please specify', {
+        showIf: [{question: radio, value: Utils.sanitizeString(_.label)}]
+      })
     })
     return [radio, ...specifyInputs]
   }

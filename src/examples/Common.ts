@@ -1,6 +1,141 @@
-import {Form, ShowIf} from '../core/Form'
+import {Form, Question, QuestionConf, ShowIf} from '../core/Form'
 
 export class Common {
+
+  static readonly agencyReferredTo = (k: Form, label = 'Agency referred to') => {
+    return k.questionWithChoices('RADIO', label, [
+      'CLEAR Global',
+      'Helsinki Foundation for Human Rights',
+      'INTERSOS',
+      'IOM',
+      'International Rescue Committee',
+      'Loop',
+      'NRC',
+      'Oxfam',
+      'Red Pencil',
+      'Save the Children',
+      'Terre Des Hommes',
+      'The Polish Center for International Aid (PCPM)',
+      'UNHCR',
+      'UNHCR/UNICEF',
+      'UNICEF'
+    ])
+  }
+
+  static readonly levelOfRisk = (k: Form, label = 'Level of risk') => {
+    return k.questionWithChoices('RADIO', label, [
+      'emergency',
+      'urgent',
+      'normal',
+    ])
+  }
+
+  static readonly serviceRequested = (k: Form, label = 'Service requested') => {
+    return k.questionWithChoices('RADIO', label, [
+      'Psychosocial support and Mental Health',
+      'Child protection services',
+      'Family tracing / Reunification',
+      'Protection - Specialized services',
+      'Material assistance / NFIs',
+      'Legal aid',
+      'Registration',
+      'Accommodation',
+      'Medical / Nutrition',
+      'Cash assistance',
+      'Food assistance',
+      'Mobility support',
+      'Education / Vocational training',
+      'Other (specify)',
+    ])
+  }
+
+  static readonly staffCode = (k: Form, label = 'Staff code') => {
+    return k.questionWithChoices('RADIO', label, [
+      'OLHUSUPR22',
+      'NASZPSPR22',
+      'IRRAPSPR22',
+      'JUPISOPR22',
+      'ANZUPSPR22',
+      'MABISOPR22',
+      'DAIVSOPR22',
+      'ANINPSPR22',
+    ])
+  }
+
+  static readonly today = (k: Form, label = 'Date') => {
+    return k.question('DATE', label, {
+      required: true,
+      default: 'today()'
+    })
+  }
+  static readonly contactDetails = (k: Form) => {
+    return [
+      k.question('TEXT', '📞 WhatsApp'),
+      k.question('TEXT', '📞 Polish phone number'),
+      k.question('TEXT', '✉️ Email'),
+      k.question('TEXT', '🏠 Current address'),
+    ]
+  }
+
+  static readonly status = (k: Form) => k.questionWithChoices('RADIO', 'Legal status', ['Refugee', 'Asylum seeker', 'Polish citizeen'])
+
+  // static readonly lstatus = (k: Form) => k.questionWithChoices('RADIO', 'Legal status', ['Refugee', 'Asylum seeker', 'Polish citizeen'])
+
+  static readonly gender = (k: Form, label = 'Gender', conf?: QuestionConf) => k.questionWithChoices('RADIO', label, ['Female', 'Male', 'Other'], conf)
+
+  static readonly nationalitiesAndSpecify = (k: Form, label = 'Nationalities', conf?: QuestionConf) => k.questionWithChoicesAndSpecify('CHECKBOX', label, [
+    {label: 'Ukrainian',},
+    {label: 'Not willing to disclose',},
+    {label: 'Other (specify)', specify: true},
+  ], conf)
+
+  static readonly polishBase = (k: Form): Question[] => {
+    const location = k.questionWithChoices('RADIO', 'Location', [
+      'Warsaw',
+      'Krakow',
+      'Rzeszow',
+      'Lublin',
+      'Chelm'
+    ])
+
+    const buildQuestion = (ifLabel: string, options: string[]): Question => {
+      return k.questionWithChoices('RADIO', 'Name of center', options, {
+        showIf: [{
+          question: location.name,
+          value: location.options!.find(_ => _.label === ifLabel)!.name
+        }],
+      })
+    }
+    return [
+      location,
+      buildQuestion('Warsaw', [
+        'Expo',
+        'PESEL registration centre',
+        'Warsaw 1',
+        'Warsaw 2 – Warta Towers',
+      ]),
+      buildQuestion('Krakow', [
+        'Tauron Arena',
+        'Train station',
+      ]),
+      buildQuestion('Rzeszow', [
+        'Korczowa',
+        'Medyka',
+        'Tesco, Prezmysl',
+        'Boratyn',
+        'Radymno',
+        'House of Ukraine',
+      ]),
+      buildQuestion('Lublin', [
+        'Dorohusk',
+        'Hrebenne',
+        'Lublin',
+      ]),
+      buildQuestion('Chelm', [
+        'Sports Centre/ Tesco Shop'
+      ]),
+    ]
+  }
 
   static readonly priorityRate = (k: Form) => {
     return k.questionWithChoices('RADIO', 'Priority case', [
@@ -28,8 +163,8 @@ export class Common {
 
     const showIf = (opts: string): ShowIf[] => {
       return [{
-        questionName: sn.name,
-        valueName: sn.options!.find(_ => _.label === opts)!.name
+        question: sn.name,
+        value: sn.options!.find(_ => _.label === opts)!.name
       }]
     }
 

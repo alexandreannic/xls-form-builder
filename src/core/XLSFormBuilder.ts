@@ -14,6 +14,7 @@ interface XLSFormQuestion {
   type: string
   name: string
   label: string
+  default?: string
   required?: boolean
   relevant?: string
   appearance?: string
@@ -58,7 +59,7 @@ export class XLSFormBuilder {
         {column: 'form_title', type: String, value: (_: any) => _.form_title},
         {column: 'version', type: String, value: (_: any) => _.version},
       ]],
-      filePath: params.path ?? '/Users/pui/WebstormProjects/xls-form-builder/output' + Utils.sanitizeString(params.title) + '.xls'
+      filePath: params.path ?? '/Users/pui/WebstormProjects/xls-form-builder/output/' + Utils.sanitizeString(params.title) + '.xls'
     })
   }
 
@@ -141,8 +142,19 @@ export class XLSFormBuilder {
       type: XLSFormBuilder.mapQuestionTypeToXLSForm(t.type) + (t.optionsId ? ' ' + t.optionsId : ' '),
       name: t.name,
       label: t.label,
+      default: t.default,
       required: t.required,
-      relevant: t.showIf ? t.showIf.map(_ => `\${${_.questionName}}${_.eq === 'neq' ? '!=' : '='}'${_.valueName}'`).join(` ${t.showIfType ?? 'and'} `) : undefined,
+      relevant: t.showIf ?
+        t.showIf
+          .map(condition => {
+            const valueName = condition.question.options?.find(_ => _.label === condition.value)?.name
+            if (!valueName) {
+              throw new Error(`Options '${condition.value}' does not exist for question ${JSON.stringify(condition.question)}`)
+            }
+            return `\${${condition.question.name}}${condition.eq === 'neq' ? '!=' : '='}'${valueName}'`
+          })
+          .join(` ${t.showIfType ?? 'and'} `)
+        : undefined,
       appearance: t.type === 'TEXTAREA' ? 'multiline' : undefined,
       guidance_hint: t.hint,
     }

@@ -1,15 +1,9 @@
-import {Form, QuestionConf} from '../core/Form'
+import {Form, QuestionConf, ShowIf} from '../core/Form'
 import {XLSFormBuilder} from '../core/XLSFormBuilder'
 import {Common} from './Common'
 
 export const formBIA = () => {
   const k = new Form()
-  const gender = (label = 'Gender', conf?: QuestionConf) => k.questionWithChoices('RADIO', label, ['Female', 'Male', 'Other'], conf)
-  const nationalitiesAndSpecify = (label = 'Nationalities', conf?: QuestionConf) => k.questionWithChoicesAndSpecify('CHECKBOX', label, [
-    {label: 'Ukrainian',},
-    {label: 'Not willing to disclose',},
-    {label: 'Other (specify)', specify: true},
-  ], conf)
   new XLSFormBuilder().buildAndCreateXLS({title: 'BIA Form'}, [
     k.section('General', () => {
       return [
@@ -27,33 +21,25 @@ export const formBIA = () => {
         {label: 'Ukraine'},
         {label: 'Other (specify)', specify: true}
       ])
-      const legalStatus = k.questionWithChoices('RADIO', 'Legal status', ['Refugee', 'Asylum seeker', 'Polish citizeen'])
       const educationLevel = k.question('TEXT', 'Education level')
       const languagesSpokenAndSpecify = k.questionWithChoicesAndSpecify('CHECKBOX', 'Languages spoken', [
         {label: 'English'},
         {label: 'Polish'},
         {label: 'Other (specify)', specify: true}
       ])
-      const whatsapp = k.question('TEXT', '📞 WhatsApp')
-      const polishPhoneNumber = k.question('TEXT', '📞 Polish phone number')
-      const email = k.question('TEXT', '✉️ Email')
-      const currentAddress = k.question('TEXT', '🏠 Current address')
       return [
         titlePersonalINfo,
         firstName,
         familyName,
         dateOfBirth,
         placeOfBirth,
-        gender(),
+        Common.gender(k),
         ...countryOfOriginAndSpecify,
-        legalStatus,
+        Common.status(k),
         educationLevel,
         ...languagesSpokenAndSpecify,
-        ...nationalitiesAndSpecify(),
-        whatsapp,
-        polishPhoneNumber,
-        email,
-        currentAddress,
+        ...Common.nationalitiesAndSpecify(k),
+        ...Common.contactDetails(k),
       ]
     }),
     k.section('Care arrangements and Living conditions', () => {
@@ -107,7 +93,7 @@ export const formBIA = () => {
             // {questionName: liveWithWithSpecify[0].name, value: 'Other children'},
             // {questionName: liveWithWithSpecify[0].name, value: 'Host family'},
             // {questionName: liveWithWithSpecify[0].name, value: 'Other (specify)'},
-            {questionName: liveWithWithSpecify[0].name, valueName: liveWithWithSpecify[0].options!.find(_ => _.label === 'Alone')!.name, eq: 'neq'},
+            {question: liveWithWithSpecify[0], value: 'Alone', eq: 'neq'},
           ]
       }
       // {showIf: [conditionIsAlone]}
@@ -139,8 +125,8 @@ export const formBIA = () => {
         ...housingConditionsAndSpecify,
         titleConsultingWithParents,
         name,
-        gender(undefined, conditionIsNotAlone),
-        ...nationalitiesAndSpecify(undefined, conditionIsNotAlone),
+        Common.gender(k, undefined, conditionIsNotAlone),
+        ...Common.nationalitiesAndSpecify(k, undefined, conditionIsNotAlone),
         relationShip,
         ...legalGuardian,
         howIsRelationShip,
@@ -171,8 +157,8 @@ export const formBIA = () => {
         'Other (specify)',
         'No One',
       ])
-      const showIfOtherFamily = [{questionName: whereDiscussProblems.name, valueName: whereDiscussProblems.options!.find(_ => _.label === 'Other family member (specify)')!.name}]
-      const showIfOther = [{questionName: whereDiscussProblems.name, valueName: whereDiscussProblems.options!.find(_ => _.label === 'Other (specify)')!.name}]
+      const showIfOtherFamily: ShowIf[] = [{question: whereDiscussProblems, value: 'Other family member (specify)'}]
+      const showIfOther: ShowIf[] = [{question: whereDiscussProblems, value: 'Other (specify)'}]
       const otherFamilySpecify = k.question('TEXT', `Please specify other family member`, {showIf: showIfOtherFamily})
       const otherSpecify = k.question('TEXT', `Please specify other`, {showIf: showIfOther})
       const healAccess = k.title(`Health/medical access`)
@@ -214,7 +200,8 @@ export const formBIA = () => {
       const titleDailyActivities = k.title(`Daily activities`)
       const whatYouDoEachDay = k.question('TEXTAREA', `Can you tell me a little bit about what you do each day? Do you spend time with friends, other children?`)
       const doYouWork = k.questionWithChoices('RADIO', `Do you currently work?`, ['Yes', 'No'])
-      const showIf = [{questionName: doYouWork.name, valueName: doYouWork.options!.find(_ => _.label === 'Yes')!.name}]
+
+      const showIf = [{question: doYouWork, value: 'Yes'}]
       const howManyHours = k.question('TEXT', 'How many hours per day', {showIf})
       const howManyDaysPerWeek = k.question('TEXT', 'How many days per week', {showIf})
       const typeOfWork = k.question('TEXT', 'Type of work', {showIf})

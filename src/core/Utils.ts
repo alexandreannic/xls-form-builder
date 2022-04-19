@@ -23,4 +23,9 @@ export class Utils {
       .toLocaleLowerCase()
       .replaceAll(/[^a-z0-9_]/g, '')
   }
+
+  static readonly regexp = {
+    email: '[A-Za-z0-9._%+-]+@gmail+[.][A-Za-z]{2,}$',
+    phone: '^\\+?[0-9\\s]{9,}$',
+  }
 }

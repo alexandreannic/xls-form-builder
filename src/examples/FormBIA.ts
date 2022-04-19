@@ -1,10 +1,10 @@
-import {Form, QuestionConf, ShowIf} from '../core/Form'
+import {Form, QuestionConf, ShowIfCondition} from '../core/Form'
 import {XLSFormBuilder} from '../core/XLSFormBuilder'
 import {Common} from './Common'
 
 export const formBIA = () => {
   const k = new Form()
-  new XLSFormBuilder().buildAndCreateXLS({title: 'BIA Form'}, [
+  new XLSFormBuilder().buildAndCreateXLS({title: 'BIA Form', numberOnTitles: true}, [
     k.section('General', () => {
       return [
         Common.priorityRate(k),
@@ -157,8 +157,8 @@ export const formBIA = () => {
         'Other (specify)',
         'No One',
       ])
-      const showIfOtherFamily: ShowIf[] = [{question: whereDiscussProblems, value: 'Other family member (specify)'}]
-      const showIfOther: ShowIf[] = [{question: whereDiscussProblems, value: 'Other (specify)'}]
+      const showIfOtherFamily: ShowIfCondition[] = [{question: whereDiscussProblems, value: 'Other family member (specify)'}]
+      const showIfOther: ShowIfCondition[] = [{question: whereDiscussProblems, value: 'Other (specify)'}]
       const otherFamilySpecify = k.question('TEXT', `Please specify other family member`, {showIf: showIfOtherFamily})
       const otherSpecify = k.question('TEXT', `Please specify other`, {showIf: showIfOther})
       const healAccess = k.title(`Health/medical access`)
@@ -202,10 +202,10 @@ export const formBIA = () => {
       const doYouWork = k.questionWithChoices('RADIO', `Do you currently work?`, ['Yes', 'No'])
 
       const showIf = [{question: doYouWork, value: 'Yes'}]
-      const howManyHours = k.question('TEXT', 'How many hours per day', {showIf})
-      const howManyDaysPerWeek = k.question('TEXT', 'How many days per week', {showIf})
-      const typeOfWork = k.question('TEXT', 'Type of work', {showIf})
-      const forHowManyMonths = k.question('TEXT', 'For how many months', {showIf})
+      const howManyHours = k.question('TEXT', 'How many hours per day', {showIf: showIf})
+      const howManyDaysPerWeek = k.question('TEXT', 'How many days per week', {showIf: showIf})
+      const typeOfWork = k.question('TEXT', 'Type of work', {showIf: showIf})
+      const forHowManyMonths = k.question('TEXT', 'For how many months', {showIf: showIf})
       const doYouEarnMoney = k.question('TEXTAREA', 'Do you earn any money for the work?', {
         hint: 'Is so, how much and what do you use it for. '
       })
@@ -261,7 +261,7 @@ export const formBIA = () => {
       return [
         note,
         title,
-        ...Common.specificNeeds(k),
+        ...Common.specificNeedsRomane(k),
         k.questionWithChoices('RADIO', 'The child is at imminent risk?', ['Yes', 'No']),
         k.questionWithChoices('RADIO', 'Risk assessment', [
           '24 hours (High risk)',

@@ -1,4 +1,4 @@
-import {Form, Question, QuestionConf, ShowIf} from '../core/Form'
+import {Form, Question, QuestionConf, ShowIfCondition} from '../core/Form'
 
 export class Common {
 
@@ -17,21 +17,20 @@ export class Common {
       'Terre Des Hommes',
       'The Polish Center for International Aid (PCPM)',
       'UNHCR',
-      'UNHCR/UNICEF',
       'UNICEF'
     ])
   }
 
   static readonly levelOfRisk = (k: Form, label = 'Level of risk') => {
     return k.questionWithChoices('RADIO', label, [
-      'emergency',
-      'urgent',
-      'normal',
+      'Emergency',
+      'Urgent',
+      'Normal',
     ])
   }
 
   static readonly serviceRequested = (k: Form, label = 'Service requested') => {
-    return k.questionWithChoices('RADIO', label, [
+    return k.questionWithChoicesAndSpecify('CHECKBOX', label, [
       'Psychosocial support and Mental Health',
       'Child protection services',
       'Family tracing / Reunification',
@@ -45,11 +44,11 @@ export class Common {
       'Food assistance',
       'Mobility support',
       'Education / Vocational training',
-      'Other (specify)',
+      {label: 'Other (specify)', specify: true},
     ])
   }
 
-  static readonly staffCode = (k: Form, label = 'Staff code') => {
+  static readonly staffCode = (k: Form, label = 'Staff code', conf?: QuestionConf) => {
     return k.questionWithChoices('RADIO', label, [
       'OLHUSUPR22',
       'NASZPSPR22',
@@ -59,25 +58,25 @@ export class Common {
       'MABISOPR22',
       'DAIVSOPR22',
       'ANINPSPR22',
-    ])
+    ], conf)
   }
 
-  static readonly today = (k: Form, label = 'Date') => {
+  static readonly today = (k: Form, label = 'Date', conf?: QuestionConf) => {
     return k.question('DATE', label, {
-      required: true,
-      default: 'today()'
+      default: 'today()',
+      ...conf,
     })
   }
   static readonly contactDetails = (k: Form) => {
     return [
-      k.question('TEXT', '📞 WhatsApp'),
-      k.question('TEXT', '📞 Polish phone number'),
-      k.question('TEXT', '✉️ Email'),
+      k.phone('📞 WhatsApp'),
+      k.phone('📞 Polish phone number'),
+      k.email('✉️ Email'),
       k.question('TEXT', '🏠 Current address'),
     ]
   }
 
-  static readonly status = (k: Form) => k.questionWithChoices('RADIO', 'Legal status', ['Refugee', 'Asylum seeker', 'Polish citizeen'])
+  static readonly status = (k: Form, conf?: QuestionConf) => k.questionWithChoices('CHECKBOX', 'Status', ['Refugee', 'Volunteer'], conf)
 
   // static readonly lstatus = (k: Form) => k.questionWithChoices('RADIO', 'Legal status', ['Refugee', 'Asylum seeker', 'Polish citizeen'])
 
@@ -89,20 +88,21 @@ export class Common {
     {label: 'Other (specify)', specify: true},
   ], conf)
 
-  static readonly polishBase = (k: Form): Question[] => {
+  static readonly polishBase = (k: Form, conf?: QuestionConf): Question[] => {
     const location = k.questionWithChoices('RADIO', 'Location', [
       'Warsaw',
       'Krakow',
       'Rzeszow',
       'Lublin',
       'Chelm'
-    ])
+    ], conf)
 
     const buildQuestion = (ifLabel: string, options: string[]): Question => {
       return k.questionWithChoices('RADIO', 'Name of center', options, {
+        ...conf,
         showIf: [{
-          question: location.name,
-          value: location.options!.find(_ => _.label === ifLabel)!.name
+          question: location,
+          value: ifLabel
         }],
       })
     }
@@ -145,7 +145,31 @@ export class Common {
     ])
   }
 
-  static readonly specificNeeds = (k: Form) => {
+  static readonly specificNeedsHCR = (k: Form) => {
+    const snIdentified = k.questionWithChoices('RADIO', 'Specific needs identified within the family', [
+      'No specific needs (identified)',
+      'Person with specific needs',
+    ])
+    const snCategory = k.questionWithChoices('CHECKBOX', 'Person with specific needs category', [
+      'Children and adolescent at risk',
+      'Unaccompanied children',
+      'Separated children',
+      'Persons with disabilities',
+      'Person with serious medical conditions',
+      'Older persons at risk (60+ years old)',
+      'Women and girls at risk',
+      'Survivors of violence or torture',
+      'People with legal and physical protection needs',
+      'No legal documentation',
+      'Stateless person',
+    ], {showIf: [{question: snIdentified, value: 'Person with specific needs'}]})
+    return [
+      snIdentified,
+      snCategory,
+    ]
+  }
+
+  static readonly specificNeedsRomane = (k: Form) => {
     const options = [
       'Older person at risk',
       'Disability',
@@ -161,10 +185,10 @@ export class Common {
 
     const sn = k.questionWithChoices('CHECKBOX', `Specifics needs`, options)
 
-    const showIf = (opts: string): ShowIf[] => {
+    const showIf = (opt: string): ShowIfCondition[] => {
       return [{
-        question: sn.name,
-        value: sn.options!.find(_ => _.label === opts)!.name
+        question: sn,
+        value: opt
       }]
     }
 

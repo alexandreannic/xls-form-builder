@@ -51,16 +51,6 @@ interface QuestionWithSpecify<L extends Label> {
 const isInstanceSpecify = <L extends Label>(_: any): _ is QuestionWithSpecify<L> => {
   return !!_.label
 }
-// export interface QuestionDraft {
-//   type: QuestionType
-//   optionsId?: string
-//   label: string
-//   hint?: string
-//   required?: boolean
-//   showIf?: ShowIf[]
-//   showIfType?: ShowIfType
-//   options?: string[]
-// }
 
 export interface Choice<L extends Label> {
   label: L
@@ -68,11 +58,6 @@ export interface Choice<L extends Label> {
 }
 
 export type QuestionConf<L extends Label> = Omit<Question<L>, 'label' | 'name' | 'type' | 'optionsId' | 'options'>
-// required?: boolean
-// showIf?: ShowIf[]
-// hint?: string
-// showIfType?: ShowIfType
-// }
 
 export interface SectionConf<L extends Label> extends ShowIf<L> {
 }
@@ -95,8 +80,6 @@ export class Form<L extends Label = string> {
   constructor(private specifyLabel: L) {
   }
 
-  // private questionIndex = 1
-
   readonly section = (label: L, questions: () => Question<L>[], conf?: SectionConf<L>): Section<L> => {
     return {label, questions, ...conf}
   }
@@ -111,14 +94,6 @@ export class Form<L extends Label = string> {
   readonly label = (label: L, conf?: QuestionConf<L>) => {
     return this.question('LABEL', label, conf)
   }
-
-  // readonly add = (q: QuestionDraft): Question => {
-  //   return {
-  //     ...q,
-  //     name: Utils.sanitizeString(q.label) + '_' + this.questionIndex++,
-  //     options: q.options?.map(_ => ({label: _, name: Utils.sanitizeString(_)})),
-  //   }
-  // }
 
   private readonly registerQuestion = (q: Omit<Question<L>, 'name'>): Question<L> => {
     return {

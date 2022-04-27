@@ -1,49 +1,54 @@
 import {Utils} from './Utils'
 
+export type I18NLabel = {en: string} & {[key: string]: string}
+
+export type Label = I18NLabel | string
 export type QuestionTypeWithChoices = 'CHECKBOX' | 'RADIO'
+
 export type QuestionTypeWithoutOptions = 'TEXT' |
   'TEXTAREA' |
   'DATE' |
   'INTEGER' |
   'TITLE' |
+  'LABEL' |
   'NOTE' |
   'DECIMAL'
 
 export type QuestionType = QuestionTypeWithChoices | QuestionTypeWithoutOptions
 
-export interface ShowIfCondition {
-  question: Question
+export interface ShowIfCondition<L extends Label> {
+  question: Question<L>
   value: string
   eq?: 'eq' | 'neq'
 }
 
 type ShowIfType = 'and' | 'or'
 
-export interface ShowIf {
-  showIf?: ShowIfCondition[]
+export interface ShowIf<L extends Label> {
+  showIf?: ShowIfCondition<L>[]
   showIfType?: ShowIfType
 }
 
-export interface Question extends ShowIf {
+export interface Question<L extends Label> extends ShowIf<L> {
   name: string
   default?: string
   type: QuestionType
   optionsId?: string
-  label: string
-  hint?: string
+  label: L
+  hint?: L
   required?: boolean
   constraint?: string
   constraintMessage?: string
-  options?: Choice[]
+  options?: Choice<L>[]
 }
 
-interface QuestionWithSpecify {
-  label: string
+interface QuestionWithSpecify<L extends Label> {
+  label: L
   specify?: boolean
-  specifyLabel?: string
+  specifyLabel?: L
 }
 
-const isInstanceSpecify = (_: any): _ is QuestionWithSpecify => {
+const isInstanceSpecify = <L extends Label>(_: any): _ is QuestionWithSpecify<L> => {
   return !!_.label
 }
 // export interface QuestionDraft {
@@ -57,48 +62,54 @@ const isInstanceSpecify = (_: any): _ is QuestionWithSpecify => {
 //   options?: string[]
 // }
 
-export interface Choice {
-  label: string
+export interface Choice<L extends Label> {
+  label: L
   name: string
 }
 
-export type QuestionConf = Omit<Question, 'label' | 'name' | 'type' | 'optionsId' | 'options'>
+export type QuestionConf<L extends Label> = Omit<Question<L>, 'label' | 'name' | 'type' | 'optionsId' | 'options'>
 // required?: boolean
 // showIf?: ShowIf[]
 // hint?: string
 // showIfType?: ShowIfType
 // }
 
-export interface SectionConf extends ShowIf {
+export interface SectionConf<L extends Label> extends ShowIf<L> {
 }
 
-export interface Section extends SectionConf {
-  label: string
-  questions: () => Question[]
+export interface Section<L extends Label> extends SectionConf<L> {
+  label: L
+  questions: () => Question<L>[]
 }
 
-export const isSection = (s: Section | Question): s is Section => {
-  return !!(s as Section).questions
+export const isSection = <L extends Label>(s: Section<L> | Question<L>): s is Section<L> => {
+  return !!(s as Section<L>).questions
 }
 
-export const isQuestions = (s: Section | Question): s is Section => {
-  return !!(s as Question).type
+export const isQuestions = <L extends Label>(s: Section<L> | Question<L>): s is Section<L> => {
+  return !!(s as Question<L>).type
 }
 
-export class Form {
+export class Form<L extends Label = string> {
 
-  private questionIndex = 1
+  constructor(private specifyLabel: L) {
+  }
 
-  readonly section = (label: string, questions: () => Question[], conf?: SectionConf): Section => {
+  // private questionIndex = 1
+
+  readonly section = (label: L, questions: () => Question<L>[], conf?: SectionConf<L>): Section<L> => {
     return {label, questions, ...conf}
   }
 
-  readonly note = (label: string, conf?: QuestionConf) => {
+  readonly note = (label: L, conf?: QuestionConf<L>) => {
     return this.question('NOTE', label, conf)
   }
 
-  readonly title = (label: string, conf?: QuestionConf) => {
+  readonly title = (label: L, conf?: QuestionConf<L>) => {
     return this.question('TITLE', label, conf)
+  }
+  readonly label = (label: L, conf?: QuestionConf<L>) => {
+    return this.question('LABEL', label, conf)
   }
 
   // readonly add = (q: QuestionDraft): Question => {
@@ -109,14 +120,14 @@ export class Form {
   //   }
   // }
 
-  private readonly registerQuestion = (q: Omit<Question, 'name'>): Question => {
+  private readonly registerQuestion = (q: Omit<Question<L>, 'name'>): Question<L> => {
     return {
       ...q,
-      name: Utils.sanitizeString(q.label) + '_' + this.questionIndex++,
+      name: Utils.sanitizeString(typeof q.label === 'object' ? q.label.en : q.label) + '_' + Utils.makeid(),
     }
   }
 
-  readonly email = (label = 'Email', conf?: QuestionConf) => {
+  readonly email = (label: L, conf?: QuestionConf<L>) => {
     return this.question('TEXT', label, {
       constraint: `regex(., '${Utils.regexp.email}')`,
       constraintMessage: `Invalid email`,
@@ -124,15 +135,15 @@ export class Form {
     })
   }
 
-  readonly phone = (label = 'Phone', conf?: QuestionConf) => {
+  readonly phone = (label: L, conf?: QuestionConf<L>) => {
     return this.question('TEXT', label, {
       constraint: `regex(., '${Utils.regexp.phone}')`,
-      constraintMessage: `Invalid phone number (must only include numbers, spaces and may start with at +). Eg. +48886926712)`,
+      constraintMessage: `Invalid phone number (must only include numbers, spaces and may start with +). Example +48886123123)`,
       ...conf,
     })
   }
 
-  readonly question = (type: QuestionTypeWithoutOptions, label: string, conf?: QuestionConf): Question => {
+  readonly question = (type: QuestionTypeWithoutOptions, label: L, conf?: QuestionConf<L>): Question<L> => {
     return this.registerQuestion({
       type,
       label,
@@ -140,29 +151,29 @@ export class Form {
     })
   }
 
-  readonly questionWithChoices = (type: QuestionTypeWithChoices, label: string, options: string[], conf?: QuestionConf): Question => {
+  readonly questionWithChoices = (type: QuestionTypeWithChoices, label: L, options: L[], conf?: QuestionConf<L>): Question<L> => {
     return this.registerQuestion({
       type: type,
       label,
-      options: options.map(_ => ({label: _, name: Utils.sanitizeString(_)})),
+      options: options.map(_ => ({label: _, name: Utils.sanitizeString(typeof _ === 'object' ? _.en : _)})),
       ...conf,
     })
   }
 
   readonly questionWithChoicesAndSpecify = (
     type: QuestionTypeWithChoices,
-    label: string,
-    options: (QuestionWithSpecify | string)[],
-    conf?: QuestionConf,
-  ): Question[] => {
-    const mappedOptions: QuestionWithSpecify[] = options.map(_ => isInstanceSpecify(_) ? _ : {label: _, specify: false})
-    const radio = this.questionWithChoices(type, label, mappedOptions.map(_ => _.label), conf)
-    const specifyInputs = mappedOptions
+    label: L,
+    options: (QuestionWithSpecify<L> | L)[],
+    conf?: QuestionConf<L>,
+  ): Question<L>[] => {
+    const harmonizedOptions: QuestionWithSpecify<L>[] = options.map(_ => isInstanceSpecify(_) ? _ : {label: _ as L, specify: false})
+    const radio = this.questionWithChoices(type, label, harmonizedOptions.map(_ => _.label), conf)
+    const specifyInputs = harmonizedOptions
       .filter(_ => _.specify === true)
       .map(_ => {
-        return this.question('TEXT', _.specifyLabel ?? 'Please specify', {
+        return this.question('TEXT', _.specifyLabel ?? this.specifyLabel, {
           required: conf?.required,
-          showIf: [{question: radio, value: _.label}]
+          showIf: [{question: radio, value: typeof _.label === 'object' ? _.label.en : _.label}]
         })
       })
     return [radio, ...specifyInputs]

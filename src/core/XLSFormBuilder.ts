@@ -1,26 +1,26 @@
 import {Utils} from './Utils'
-import {Choice, Question, QuestionType, Section} from './Form'
+import {Choice, Label, Question, QuestionType, Section} from './Form'
 import writeXlsxFile from 'write-excel-file/node'
 
-export interface XLSFormChoices {
+export interface XLSFormChoices<L extends Label> {
   list_name: string
   name: string
-  label: string
+  label: L
 }
 
 export type KoboTheme = 'theme-grid no-text-transform'
 
 type XLSFormQuestionType = 'end_group' | 'begin_group' | 'text' | 'select_multiple' | 'select_one' | 'decimal' | 'integer' | 'date' | 'note'
 
-interface XLSFormQuestion {
+interface XLSFormQuestion<L extends Label> {
   type: string
   name: string
-  label: string
+  label: L
   default?: string
   required?: boolean
   relevant?: string
   appearance?: string
-  guidance_hint?: string
+  guidance_hint?: L
   constraint?: string
   constraint_message?: string
 }
@@ -32,27 +32,27 @@ export interface XLSFormBuilderProps {
   numberOnTitles?: boolean
 }
 
-export class XLSFormBuilder {
-  private collectedOptions: {[key: string]: Choice[]} = {}
+export class XLSFormBuilder<L extends Label> {
+  private collectedOptions: {[key: string]: Choice<L>[]} = {}
   private titlesIndex = 0
   private subTitlesIndex = 'a'
 
-  readonly buildAndCreateXLS = (props: XLSFormBuilderProps, sections: Section[]) => {
-    XLSFormBuilder.createXLS(
+  readonly buildAndCreateXLS = (props: XLSFormBuilderProps, sections: Section<L>[]) => {
+    XLSFormBuilder.createXLS<L>(
       props,
       this.buildForm(sections, props),
-      XLSFormBuilder.mapXLSFormChoices(this.collectedOptions)
+      XLSFormBuilder.mapXLSFormChoices<L>(this.collectedOptions)
     )
   }
-  readonly buildAndCreateXLSWithoutSection = (props: XLSFormBuilderProps, questions: () =>  Question[]) => {
-    XLSFormBuilder.createXLS(
+  readonly buildAndCreateXLSWithoutSection = (props: XLSFormBuilderProps, questions: () => Question<L>[]) => {
+    XLSFormBuilder.createXLS<L>(
       props,
       this.buildQuestions(questions, props),
-      XLSFormBuilder.mapXLSFormChoices(this.collectedOptions)
+      XLSFormBuilder.mapXLSFormChoices<L>(this.collectedOptions)
     )
   }
 
-  private static readonly createXLS = async (params: XLSFormBuilderProps, k: XLSFormQuestion[], choices: XLSFormChoices[]) => {
+  private static readonly createXLS = async <L extends Label>(params: XLSFormBuilderProps, k: XLSFormQuestion<L>[], choices: XLSFormChoices<L>[]) => {
     console.log(`Build ${params.title} form`)
     return writeXlsxFile([
       k,
@@ -65,20 +65,46 @@ export class XLSFormBuilder {
     ], {
       sheets: ['survey', 'choices', 'settings'],
       schema: [[
-        {column: 'type', type: String, value: _ => (_ as unknown as XLSFormQuestion).type},
-        {column: 'name', type: String, value: _ => (_ as unknown as XLSFormQuestion).name},
-        {column: 'label', type: String, value: _ => (_ as unknown as XLSFormQuestion).label},
-        {column: 'required', type: String, value: _ => (_ as unknown as XLSFormQuestion).required ? 'true' : 'false'},
-        {column: 'relevant', type: String, value: _ => (_ as unknown as XLSFormQuestion).relevant ?? ''},
-        {column: 'appearance', type: String, value: _ => (_ as unknown as XLSFormQuestion).appearance ?? ''},
-        {column: 'default', type: String, value: _ => (_ as unknown as XLSFormQuestion).default ?? ''},
-        {column: 'constraint', type: String, value: _ => (_ as unknown as XLSFormQuestion).constraint ?? ''},
-        {column: 'constraint_message', type: String, value: _ => (_ as unknown as XLSFormQuestion).constraint_message ?? ''},
-        {column: 'guidance_hint', type: String, value: _ => (_ as unknown as XLSFormQuestion).guidance_hint ?? ''},
+        {column: 'type', type: String, value: _ => (_ as unknown as XLSFormQuestion<L>).type},
+        {column: 'name', type: String, value: _ => (_ as unknown as XLSFormQuestion<L>).name},
+        ...(typeof k[0].label === 'object') ?
+          Object.keys(k[0].label).map(langCode => ({
+            column: `label::${langCode} (${langCode})`,
+            type: String,
+            value: (_: any) => ((_ as unknown as XLSFormQuestion<L>).label as any)[langCode]
+          }))
+          : [
+            {column: 'label', type: String, value: (_: any) => (_ as unknown as XLSFormQuestion<L>).label},
+          ],
+        {column: 'required', type: String, value: _ => (_ as unknown as XLSFormQuestion<L>).required ? 'true' : 'false'},
+        {column: 'relevant', type: String, value: _ => (_ as unknown as XLSFormQuestion<L>).relevant ?? ''},
+        {column: 'appearance', type: String, value: _ => (_ as unknown as XLSFormQuestion<L>).appearance ?? ''},
+        {column: 'default', type: String, value: _ => (_ as unknown as XLSFormQuestion<L>).default ?? ''},
+        {column: 'constraint', type: String, value: _ => (_ as unknown as XLSFormQuestion<L>).constraint ?? ''},
+        {column: 'constraint_message', type: String, value: _ => (_ as unknown as XLSFormQuestion<L>).constraint_message ?? ''},
+        ...(typeof k[0].label === 'object') ?
+          Object.keys(k[0].label).map(langCode => ({
+            column: `hint::${langCode} (${langCode})`,
+            type: String,
+            value: (_: any) => ((_ as unknown as XLSFormQuestion<L>).guidance_hint ?? {} as any)[langCode]
+          }))
+          : [
+            {column: 'guidance_hint', type: String, value: (_: any) => (_ as unknown as XLSFormQuestion<L>).guidance_hint ?? ''},
+          ],
+
       ], [
-        {column: 'list_name', type: String, value: _ => (_ as unknown as XLSFormChoices).list_name},
-        {column: 'name', type: String, value: _ => (_ as unknown as XLSFormChoices).name},
-        {column: 'label', type: String, value: _ => (_ as unknown as XLSFormChoices).label},
+        {column: 'list_name', type: String, value: _ => (_ as unknown as XLSFormChoices<L>).list_name},
+        {column: 'name', type: String, value: _ => (_ as unknown as XLSFormChoices<L>).name},
+        ...(typeof k[0].label === 'object') ?
+          Object.keys(k[0].label).map(langCode => ({
+            column: `label::${langCode} (${langCode})`,
+            type: String,
+            value: (_: any) => ((_ as unknown as XLSFormChoices<L>).label as any)[langCode]
+          }))
+          : [
+            {column: 'label', type: String, value: (_: any) => (_ as unknown as XLSFormChoices<L>).label},
+          ],
+
       ], [
         {column: 'form_title', type: String, value: (_: any) => _.form_title},
         {column: 'version', type: String, value: (_: any) => _.version},
@@ -87,7 +113,18 @@ export class XLSFormBuilder {
     })
   }
 
-  private readonly buildQuestions = (questions: () => Question[], props: XLSFormBuilderProps): XLSFormQuestion[] => {
+  private static readonly mapLabel = <L extends Label>(l: L, map: (_: string) => string): L => {
+    if (typeof l === 'object') {
+      Object.keys(l).forEach(k => {
+        l[k] = map(l[k])
+      })
+      return l
+    } else {
+      return map(l) as L
+    }
+  }
+
+  private readonly buildQuestions = (questions: () => Question<L>[], props: XLSFormBuilderProps): XLSFormQuestion<L>[] => {
     return questions()
       .map(q => {
         if (q.options) {
@@ -103,12 +140,17 @@ export class XLSFormBuilder {
             if (props.numberOnTitles) {
               const subTitles = this.subTitlesIndex
               this.subTitlesIndex = Utils.nextChar(this.subTitlesIndex)
-              q.label = `####${this.titlesIndex}.${subTitles}. ${q.label}`
+              q.label = XLSFormBuilder.mapLabel(q.label, _ => `${this.titlesIndex}.${subTitles}. ${_}`)
             }
+            q.label = XLSFormBuilder.mapLabel(q.label, _ => `####${_}`)
+            break
+          }
+          case 'LABEL': {
+            q.label = XLSFormBuilder.mapLabel(q.label, _ => `**${_}**`)
             break
           }
           case 'NOTE': {
-            q.label = `*${q.label}*`
+            q.label = XLSFormBuilder.mapLabel(q.label, _ => `*${_}*`)
             break
           }
         }
@@ -117,27 +159,27 @@ export class XLSFormBuilder {
       .map(XLSFormBuilder.mapQuestionToXLSForm)
   }
 
-  private readonly buildForm = (sections: Section[], props: XLSFormBuilderProps): XLSFormQuestion[] => {
+  private readonly buildForm = (sections: Section<L>[], props: XLSFormBuilderProps): XLSFormQuestion<L>[] => {
     return sections.flatMap(s => {
       this.subTitlesIndex = 'a'
       return [
         {
           type: 'begin_group',
           name: Utils.sanitizeString(`group_${s.label}`),
-          label: props.numberOnTitles ? `${++this.titlesIndex}. ${s.label}` : s.label,
+          label: XLSFormBuilder.mapLabel(s.label, _ => props.numberOnTitles ? `${++this.titlesIndex}. ${_}` : _),
           relevant: XLSFormBuilder.mapRelevant(s),
         },
         ...this.buildQuestions(s.questions, props),
         {
           type: 'end_group',
           name: '',
-          label: '',
+          label: '' as any // FIXME(Alex) It should not be a string, but a L,
         },
       ]
     })
   }
 
-  private static readonly mapXLSFormChoices = (options: {[key: string]: Choice[]}): XLSFormChoices[] => {
+  private static readonly mapXLSFormChoices = <L extends Label>(options: {[key: string]: Choice<L>[]}): XLSFormChoices<L>[] => {
     return Object.entries(options).flatMap(([key, options]) => {
       return options.map(option => ({
         list_name: key,
@@ -159,6 +201,7 @@ export class XLSFormBuilder {
         return 'integer'
       case 'DECIMAL':
         return 'decimal'
+      case 'LABEL':
       case 'TITLE':
       case 'NOTE':
         return 'note'
@@ -167,7 +210,7 @@ export class XLSFormBuilder {
     }
   }
 
-  private static readonly mapQuestionToXLSForm = (t: Question): XLSFormQuestion => {
+  private static readonly mapQuestionToXLSForm = <L extends Label>(t: Question<L>): XLSFormQuestion<L> => {
     return {
       ...t,
       type: XLSFormBuilder.mapQuestionTypeToXLSForm(t.type) + (t.optionsId ? ' ' + t.optionsId : ' '),
@@ -178,15 +221,18 @@ export class XLSFormBuilder {
     }
   }
 
-  private static readonly mapRelevant = (t: Pick<Question, 'showIf' | 'showIfType'>): string | undefined => {
+  private static readonly mapRelevant = <L extends Label>(t: Pick<Question<L>, 'showIf' | 'showIfType'> & Partial<Pick<Question<L>, 'type'>>): string | undefined => {
     if (t.showIf) {
       return t.showIf
         .map(condition => {
-          const valueName = condition.question.options?.find(_ => _.label === condition.value)?.name
+          const valueName = condition.question.options?.find(_ => (typeof _.label === 'object' ? _.label.en : _.label) === condition.value)?.name
           if (!valueName) {
             throw new Error(`Options '${condition.value}' does not exist for question ${JSON.stringify(condition.question)}`)
           }
-          return `\${${condition.question.name}}${condition.eq === 'neq' ? '!=' : '='}'${valueName}'`
+          if (condition.eq === 'neq') {
+            return `\${${condition.question.name}}${condition.eq === 'neq' ? '!=' : '='}'${valueName}'`
+          }
+          return `selected(\${${condition.question.name}}, '${valueName}')`
         })
         .join(` ${t.showIfType ?? 'and'} `)
     }

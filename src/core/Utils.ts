@@ -1,9 +1,17 @@
+
+export type EN_UK_Label = {en: string, uk: string}
+
+export const pleaseSpecify_EN_UK: EN_UK_Label = {
+  en: 'Please specify',
+  uk: 'Будь ласка уточніть',
+}
+
 export class Utils {
   static readonly nextChar = (c: string) => {
     return String.fromCharCode(c.charCodeAt(0) + 1)
   }
 
-  static readonly makeid = (length = 7) => {
+  static readonly makeid = (length = 8) => {
     let result = ''
     const characters = 'abcdefghijklmnopqrstuvwxyz0123456789'
     const charactersLength = characters.length
@@ -25,6 +33,7 @@ export class Utils {
   }
 
   static readonly regexp = {
+    staffCode: '[A-Za-z0-9]{10}',
     email: '[A-Za-z0-9._%+-]+@gmail+[.][A-Za-z]{2,}$',
     phone: '^\\+?[0-9\\s]{9,}$',
   }

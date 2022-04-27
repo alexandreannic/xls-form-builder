@@ -7,7 +7,7 @@ export const formBIA = () => {
   new XLSFormBuilder().buildAndCreateXLS({title: 'BIA Form', numberOnTitles: true}, [
     k.section('General', () => {
       return [
-        Common.priorityRate(k),
+        Common.levelOfRisk(k),
         k.question('TEXT', 'Child protection case #'),
       ]
     }),
@@ -35,7 +35,7 @@ export const formBIA = () => {
         placeOfBirth,
         Common.gender(k),
         ...countryOfOriginAndSpecify,
-        Common.status(k),
+        Common.status(k, 'RADIO'),
         educationLevel,
         ...languagesSpokenAndSpecify,
         ...Common.nationalitiesAndSpecify(k),
@@ -261,7 +261,7 @@ export const formBIA = () => {
       return [
         note,
         title,
-        ...Common.specificNeedsRomane(k),
+        ...Common.specificNeedsHCR(k),
         k.questionWithChoices('RADIO', 'The child is at imminent risk?', ['Yes', 'No']),
         k.questionWithChoices('RADIO', 'Risk assessment', [
           '24 hours (High risk)',

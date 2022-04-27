@@ -63,7 +63,7 @@ new XLSFormBuilder().buildAndCreateXLS({title: 'Test'}, [
 
 ### I18n
 
-Form accepts generic i18n. Locales are inferred thus you cannot forget or define wrong local.
+Form accepts generic i18n. Locales are inferred by TS thus you cannot forget or define wrong local.
 
 #### Code
 ```

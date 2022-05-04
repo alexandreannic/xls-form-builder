@@ -10,7 +10,15 @@ export interface XLSFormChoices<L extends Label> {
 
 export type KoboTheme = 'theme-grid no-text-transform'
 
-type XLSFormQuestionType = 'end_group' | 'begin_group' | 'text' | 'select_multiple' | 'select_one' | 'decimal' | 'integer' | 'date' | 'note'
+type XLSFormQuestionType = 'end_group'
+  | 'begin_group'
+  | 'text'
+  | 'select_multiple'
+  | 'select_one'
+  | 'decimal'
+  | 'integer'
+  | 'date'
+  | 'note'
 
 interface XLSFormQuestion<L extends Label> {
   type: string
@@ -134,29 +142,48 @@ export class XLSFormBuilder<L extends Label> {
         }
         return q
       })
-      .map(q => {
-        switch (q.type) {
-          case 'TITLE': {
-            if (props.numberOnTitles) {
-              const subTitles = this.subTitlesIndex
-              this.subTitlesIndex = Utils.nextChar(this.subTitlesIndex)
-              q.label = XLSFormBuilder.mapLabel(q.label, _ => `${this.titlesIndex}.${subTitles}. ${_}`)
-            }
-            q.label = XLSFormBuilder.mapLabel(q.label, _ => `####${_}`)
-            break
-          }
-          case 'LABEL': {
-            q.label = XLSFormBuilder.mapLabel(q.label, _ => `**${_}**`)
-            break
-          }
-          case 'NOTE': {
-            q.label = XLSFormBuilder.mapLabel(q.label, _ => `*${_}*`)
-            break
-          }
-        }
-        return q
-      })
+      .map(props.numberOnTitles ? this.enumerateTitle : _ => _)
+      .map(this.mapQuestionType)
+      .map(this.mapFontStyle)
       .map(XLSFormBuilder.mapQuestionToXLSForm)
+  }
+
+  private readonly enumerateTitle = (q: Question<L>): Question<L> => {
+    switch (q.type) {
+      case 'TITLE': {
+        const subTitles = this.subTitlesIndex
+        this.subTitlesIndex = Utils.nextChar(this.subTitlesIndex)
+        q.label = XLSFormBuilder.mapLabel(q.label, _ => `${this.titlesIndex}.${subTitles}. ${_}`)
+        break
+      }
+    }
+    return q
+  }
+
+  private readonly mapQuestionType = (q: Question<L>): Question<L> => {
+    switch (q.type) {
+      case 'TITLE': {
+        q.label = XLSFormBuilder.mapLabel(q.label, _ => `####${_}`)
+        break
+      }
+    }
+    return q
+  }
+
+  private readonly mapFontStyle = (q: Question<L>): Question<L> => {
+    if (q.size === 'small') {
+      q.label = XLSFormBuilder.mapLabel(q.label, _ => `<sup>${_}</sup>`)
+    }
+    if (q.size === 'big') {
+      q.label = XLSFormBuilder.mapLabel(q.label, _ => `<span style="font-size: 1.15em">${_}</span>`)
+    }
+    if (q.italic) {
+      q.label = XLSFormBuilder.mapLabel(q.label, _ => `*${_}*`)
+    }
+    if (q.bold) {
+      q.label = XLSFormBuilder.mapLabel(q.label, _ => `**${_}**`)
+    }
+    return q
   }
 
   private readonly buildForm = (sections: Section<L>[], props: XLSFormBuilderProps): XLSFormQuestion<L>[] => {
@@ -201,7 +228,6 @@ export class XLSFormBuilder<L extends Label> {
         return 'integer'
       case 'DECIMAL':
         return 'decimal'
-      case 'LABEL':
       case 'TITLE':
       case 'NOTE':
         return 'note'

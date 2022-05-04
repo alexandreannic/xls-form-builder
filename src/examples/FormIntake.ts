@@ -63,17 +63,17 @@ export const formIntake = () => {
         k.label({en: 'Mental health & psychosocial assessment & intervention', uk: 'Психічне здоров’я та психосоціальна оцінка та втручання'}, {showIf: _showIfMHPSS}),
         k.question('TEXTAREA',
           {
-            en: '<sup>Assessment (look and listen, observe appearance and behavior, assess any changes in feelings or behavior, identify protective factors and strengths)</sup>',
-            uk: '<sup>Оцінка (дивіться і слухайте, спостерігайте за зовнішнім виглядом і поведінкою, оцінюйте будь-які зміни в почуттях або поведінці, виявляйте захисні фактори та сильні сторони)</sup>',
+            en: 'Assessment (look and listen, observe appearance and behavior, assess any changes in feelings or behavior, identify protective factors and strengths)',
+            uk: 'Оцінка (дивіться і слухайте, спостерігайте за зовнішнім виглядом і поведінкою, оцінюйте будь-які зміни в почуттях або поведінці, виявляйте захисні фактори та сильні сторони)',
           },
-          {showIf: _showIfMHPSS}),
+          {showIf: _showIfMHPSS, size: 'small'}),
         k.question('TEXTAREA', {
-          en: '<sup>Describe what was achieved with/provided to the client during the session</sup>',
-          uk: '<sup>Опишіть, що було досягнуто/надано клієнту під час сеансу</sup>',
-        }, {showIf: _showIfMHPSS}),
+          en: 'Describe what was achieved with/provided to the client during the session',
+          uk: 'Опишіть, що було досягнуто/надано клієнту під час сеансу',
+        }, {showIf: _showIfMHPSS, size: 'small'}),
       ]
     }),
-    k.section({en: 'Actions needed', uk: 'Необхідні дії'}, () => {
+    k.section({en: 'Actions information', uk: 'Необхідні дії'}, () => {
       return [
         ...k.questionWithChoicesAndSpecify('CHECKBOX', {en: 'Actions needed', uk: 'Необхідні дії'}, [
           {label: {en: 'Mental health and psychosocial support follow-up consultation', uk: 'Подальша консультація з питань психічного здоров\'я та психосоціальної підтримки'}},

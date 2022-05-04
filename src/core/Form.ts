@@ -10,7 +10,6 @@ export type QuestionTypeWithoutOptions = 'TEXT' |
   'DATE' |
   'INTEGER' |
   'TITLE' |
-  'LABEL' |
   'NOTE' |
   'DECIMAL'
 
@@ -40,6 +39,9 @@ export interface Question<L extends Label> extends ShowIf<L> {
   constraint?: string
   constraintMessage?: string
   options?: Choice<L>[]
+  bold?: boolean
+  italic?: boolean
+  size?: 'small' | 'normal' | 'big'
 }
 
 interface QuestionWithSpecify<L extends Label> {
@@ -91,8 +93,9 @@ export class Form<L extends Label = string> {
   readonly title = (label: L, conf?: QuestionConf<L>) => {
     return this.question('TITLE', label, conf)
   }
+
   readonly label = (label: L, conf?: QuestionConf<L>) => {
-    return this.question('LABEL', label, conf)
+    return this.note(label, {...conf, bold: true})
   }
 
   private readonly registerQuestion = (q: Omit<Question<L>, 'name'>): Question<L> => {

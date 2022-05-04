@@ -288,7 +288,8 @@ export const formBIA = () => {
           note,
           title,
           ...Common.specificNeedsHCR(k),
-          k.questionWithChoices('RADIO', {en: 'The child is at imminent risk?', uk: ''}, [{en: 'Yes', uk: ''}, {en: 'No', uk: ''}]),
+          k.questionWithChoices('RADIO', {en: 'The child is at imminent risk?', uk: ''}, [{en: 'Yes', uk: ''}, {en: 'No', uk: ''}]
+          ),
           k.questionWithChoices('RADIO', {en: 'Risk assessment', uk: ''}, [
             {en: '24 hours (High risk)', uk: ''},
             {en: '3 days (Medium risk)', uk: ''},

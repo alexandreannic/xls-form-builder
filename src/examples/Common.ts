@@ -120,6 +120,14 @@ export class Common {
 
   static readonly age = (k: Form<EN_UK_Label>, label = {en: 'Age', uk: 'Вік'}, conf?: QuestionConf<EN_UK_Label>) => k.question('INTEGER', label, conf)
 
+  static readonly ageRange = (k: Form<EN_UK_Label>, label = {en: 'Age', uk: 'Вік'}, conf?: QuestionConf<EN_UK_Label>) => k.questionWithChoices('RADIO', label, [
+    {en: '0-4 years old', uk: ''},
+    {en: '5-11 years old', uk: ''},
+    {en: '12-17 years old', uk: ''},
+    {en: '18-59 years old', uk: ''},
+    {en: '60+ years old', uk: ''},
+  ])
+
   static readonly nationalitiesAndSpecify = (k: Form<EN_UK_Label>,
     label = {en: 'Nationality', uk: 'Національність'},
     conf?: QuestionConf<EN_UK_Label>) => k.questionWithChoicesAndSpecify('CHECKBOX', label, [

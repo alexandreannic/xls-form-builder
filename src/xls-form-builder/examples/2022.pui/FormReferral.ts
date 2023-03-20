@@ -1,7 +1,7 @@
-import {XLSFormBuilder} from '../core/XLSFormBuilder'
-import {Form, ShowIfCondition} from '../core/Form'
+import {XLSFormBuilder} from '../../core/v1/XLSFormBuilder'
+import {Form, ShowIfCondition} from '../../core/v1/Form'
 import {Common} from './Common'
-import {EN_UK_Label, pleaseSpecify_EN_UK} from '../core/Utils'
+import {EN_UK_Label, pleaseSpecify_EN_UK} from '../../core/Utils'
 
 export const formReferral = () => {
   const k = new Form<EN_UK_Label>(pleaseSpecify_EN_UK)

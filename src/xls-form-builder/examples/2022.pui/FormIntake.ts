@@ -1,7 +1,7 @@
-import {Form, ShowIf, ShowIfCondition} from '../core/Form'
-import {XLSFormBuilder} from '../core/XLSFormBuilder'
+import {Form, ShowIf, ShowIfCondition} from '../../core/v1/Form'
+import {XLSFormBuilder} from '../../core/v1/XLSFormBuilder'
 import {Common} from './Common'
-import {EN_UK_Label, pleaseSpecify_EN_UK} from '../core/Utils'
+import {EN_UK_Label, pleaseSpecify_EN_UK} from '../../core/Utils'
 
 export const formIntake = () => {
   const k = new Form<EN_UK_Label>(pleaseSpecify_EN_UK)

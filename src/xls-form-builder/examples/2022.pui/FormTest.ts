@@ -1,6 +1,6 @@
-import {XLSFormBuilder} from '../core/XLSFormBuilder'
-import {Form} from '../core/Form'
-import {EN_UK_Label} from '../core/Utils'
+import {XLSFormBuilder} from '../../core/v1/XLSFormBuilder'
+import {Form} from '../../core/v1/Form'
+import {EN_UK_Label} from '../../core/Utils'
 
 export const formTest = () => {
   const k = new Form<EN_UK_Label>({en: 'specify', uk: 'Specify'})

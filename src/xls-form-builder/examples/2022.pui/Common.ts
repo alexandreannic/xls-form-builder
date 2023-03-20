@@ -1,5 +1,5 @@
-import {Form, Question, QuestionConf, QuestionType, QuestionTypeWithChoices, ShowIfCondition} from '../core/Form'
-import {EN_UK_Label, Utils} from '../core/Utils'
+import {Form, Question, QuestionConf, QuestionType, QuestionTypeWithChoices, ShowIfCondition} from '../../core/v1/Form'
+import {EN_UK_Label, Utils} from '../../core/Utils'
 
 export class Common {
 

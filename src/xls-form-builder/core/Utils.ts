@@ -1,4 +1,11 @@
 
+type PipeFunction = <T, R>(fn1: (arg: T) => R, ...fns: (((arg: R) => R) | false | undefined)[]) => (arg: T) => R;
+
+export const pipe: PipeFunction = (fn1, ...fns) => {
+  return (arg) => fns.reduce((prev, fn) => fn ? fn(prev) : prev, fn1(arg))
+}
+
+
 export type EN_UK_Label = {en: string, uk: string}
 
 export const pleaseSpecify_EN_UK: EN_UK_Label = {

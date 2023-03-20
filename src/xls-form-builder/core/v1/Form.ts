@@ -1,4 +1,4 @@
-import {Utils} from './Utils'
+import {Utils} from '../Utils'
 
 export type I18NLabel = {en: string} & {[key: string]: string}
 

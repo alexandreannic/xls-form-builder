@@ -1,4 +1,4 @@
-import {Utils} from './Utils'
+import {Utils} from '../Utils'
 import {Choice, Label, Question, QuestionType, Section} from './Form'
 import writeXlsxFile from 'write-excel-file/node'
 
@@ -117,7 +117,7 @@ export class XLSFormBuilder<L extends Label> {
         {column: 'form_title', type: String, value: (_: any) => _.form_title},
         {column: 'version', type: String, value: (_: any) => _.version},
       ]],
-      filePath: params.path ?? '/Users/pui/WebstormProjects/xls-form-builder/output/' + Utils.sanitizeString(params.title) + '.xls'
+      filePath: params.path ?? '../' + Utils.sanitizeString(params.title) + '.xls'
     })
   }
 

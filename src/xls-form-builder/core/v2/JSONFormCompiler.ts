@@ -12,6 +12,7 @@ export interface JSONChoices<L extends I18n, Locale extends string> {
   list_name: string
   name: keyof L
   label: Translations<Locale>
+  tag?: string
 }
 
 export type KoboTheme = 'theme-grid no-text-transform'
@@ -20,6 +21,7 @@ type JSONQuestionType = 'end_group'
   | 'begin_group'
   | 'text'
   | 'select_multiple'
+  | 'calculate'
   | 'select_one'
   | 'decimal'
   | 'integer'
@@ -31,9 +33,11 @@ type Translations<L extends string> = {locale: L, text: string}[]
 export interface JSONQuestion<T extends I18n, Locale extends string> {
   type: string
   name: string
+  calculation?: string
   label: Translations<Locale>
   default?: string
   required?: boolean
+  choice_filter?: string
   relevant?: string
   appearance?: string
   hint?: Translations<Locale>
@@ -131,7 +135,6 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
       this.subTitlesIndex = this.subTitlesIndex + 1
       return `${this.titlesIndex}.${subTitles}.`
     })()
-    console.log(qName, numeration, !!q.showIf)
     this.enumerationNamesIndex.set(qName, numeration)
     q.label = q.label.map(_ => ({..._, text: `${numeration} ${_.text}`}))
     return q
@@ -163,6 +166,7 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
   private readonly mapQuestionToXLSForm = (q: QuestionWithI18n<T, Locale>): JSONQuestion<T, Locale> => {
     return {
       ...q,
+      choice_filter: q.choiceFilter,
       name: q.name as string,
       required: !q.optional,
       type: this.mapQuestionTypeToXLSForm(q.type) + (q.optionsId ? ' ' + q.optionsId : ' '),
@@ -175,6 +179,12 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
   }
 
   private readonly applyLabelFontStyle = (q: QuestionWithI18n<T, Locale>): QuestionWithI18n<T, Locale> => {
+    if (q.type === 'DIVIDER') {
+      q.label = q.label.map(_ => ({
+        ..._,
+        text: `<span style="display: block; width: 620px; margin-top: 12px; color: transparent; border-top: 1px solid rgba(0, 0, 0, 0.12)">Test</span>`
+      }))
+    }
     if (q.type === 'TITLE') {
       q.label = q.label.map(_ => ({..._, text: `####${_.text}`}))
     }
@@ -202,6 +212,7 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
         list_name: key,
         name: option.name,
         label: this.translate(option.name),
+        tag: option.tag,
       }))
     })
   }
@@ -210,6 +221,8 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
     switch (t) {
       case 'DATE':
         return 'date'
+      case 'CALCULATE':
+        return 'calculate'
       case 'CHECKBOX':
         return 'select_multiple'
       case 'RADIO':
@@ -219,6 +232,7 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
       case 'DECIMAL':
         return 'decimal'
       case 'TITLE':
+      case 'DIVIDER':
       case 'NOTE':
         return 'note'
       default:

@@ -20,7 +20,9 @@ export type QuestionTypeWithoutOptions = 'TEXT' |
   'DATE' |
   'INTEGER' |
   'TITLE' |
+  'CALCULATE' |
   'NOTE' |
+  'DIVIDER' |
   'DECIMAL'
 
 export type QuestionType = QuestionTypeWithChoices | QuestionTypeWithoutOptions
@@ -39,10 +41,13 @@ export interface ShowIf<L extends I18n> {
 }
 
 export interface Question2<L extends I18n> extends ShowIf<L> {
+  appearance?: 'horizontal' | 'minimal' | 'horizontal-compact' | 'likert'
   name: keyof L
   default?: string
+  calculation?: string
   type: QuestionType
   optionsId?: string
+  choiceFilter?: string
   // label: keyof L
   hint?: keyof L
   // guidanceHint?: keyof L
@@ -56,15 +61,15 @@ export interface Question2<L extends I18n> extends ShowIf<L> {
   size?: 'small' | 'normal' | 'big'
 }
 
-interface QuestionWithSpecify<L extends I18n> {
-  name: keyof L
-  specify?: boolean
-  specifyLabel?: keyof L
-}
-
 export interface Choice<L extends I18n> {
   // label: keyof L
   name: keyof L
+  tag?: string
+}
+
+interface ChoiceWithSpecify<L extends I18n> extends Choice<L> {
+  specify?: boolean
+  specifyLabel?: keyof L
 }
 
 export type QuestionProps<L extends I18n> = Omit<Question2<L>, 'optionsId' | 'options'>
@@ -85,6 +90,18 @@ export class FormCreator<L extends I18n> {
     invalidEmail: keyof L,
     invalidPhone: keyof L,
   }) {
+  }
+
+  readonly calculate = (props: Pick<QuestionProps<L>, 'calculation'> & {name: string}) => {
+    return this.question({
+      type: 'CALCULATE',
+      calculation: props.calculation,
+      name: props.name,
+    })
+  }
+
+  readonly divider = () => {
+    return this.question({type: 'DIVIDER', name: 'divider'})
   }
 
   readonly section = (props: Section<L>): Section<L> => {
@@ -136,25 +153,25 @@ export class FormCreator<L extends I18n> {
 
   readonly questionWithChoices = (props: Omit<QuestionProps<L>, 'type'> & {
     multiple?: boolean,
-    options: (keyof L)[],
+    options: Choice<L>[] | (keyof L)[],
     defineExclusiveOption?: keyof L | (keyof L)[],
   }): Question2<L> => {
     return this.registerQuestion({
       ...props,
       ...props.defineExclusiveOption && {
-        constraint: [props.defineExclusiveOption ?? []].flat().map(_ => 
+        constraint: [props.defineExclusiveOption ?? []].flat().map(_ =>
           `not(selected(., '${_ as string}') and (${props.options.map(o => `selected(., '${o as string}')`).join(' or ')}))`,
         ).join(' and ')
       },
       type: props.multiple ? 'CHECKBOX' : 'RADIO',
-      options: props.options.map(_ => ({name: _})),
+      options: props.options.map(_ => typeof _ === 'object' ? _ : ({name: _})),
     })
   }
 
   readonly questionWithChoicesAndOtherSpecify = (props: Omit<QuestionProps<L>, 'type'> & {
     multiple?: boolean
-    options: (QuestionWithSpecify<L> | keyof L)[],
-    defineExclusiveOption?: keyof L,
+    options: (ChoiceWithSpecify<L> | keyof L)[],
+    defineExclusiveOption?: keyof L | (keyof L)[],
   }) => {
     return this.questionWithChoicesAndSpecify({
       ...props,
@@ -168,10 +185,10 @@ export class FormCreator<L extends I18n> {
 
   readonly questionWithChoicesAndSpecify = (props: Omit<QuestionProps<L>, 'type'> & {
     multiple?: boolean
-    defineExclusiveOption?: keyof L,
-    options: (QuestionWithSpecify<L> | keyof L)[]
+    defineExclusiveOption?: keyof L | (keyof L)[],
+    options: (ChoiceWithSpecify<L> | keyof L)[]
   },): Question2<L>[] => {
-    const harmonizedOptions: QuestionWithSpecify<L>[] = props.options.map(_ => typeof _ === 'string' ? {name: _, specify: false} : _) as any
+    const harmonizedOptions: ChoiceWithSpecify<L>[] = props.options.map(_ => typeof _ === 'string' ? {name: _, specify: false} : _) as any
     const radio = this.questionWithChoices({
       ...props,
       options: harmonizedOptions.map(_ => _.name)

@@ -41,11 +41,13 @@ export class Common {
     })
   }
 
-  readonly location = () => {
+  readonly location = (props?: Pick<QuestionProps<I18n>, 'showIf' | 'showIfType' | 'name' | 'optional'>) => {
     return this.k.questionWithChoices({
+      ...props,
       name: 'what_oblast_current_living',
       options: [
-        'yes', 'no',
+        'Avtonomna Respublika Krym' as any,
+        'Dnipropetrovska' as any,
       ]
     })
   }
@@ -64,16 +66,20 @@ export class Common {
       ]
     })
   }
-  
-  // readonly multipleChoicesAndUnable = (props: Omit<QuestionProps<I18n>, 'type'> & {
-  //   options: (keyof I18n)[],
-  // }) => {
-  //   console.log(`not(selected(., 'unable_unwilling_to_answer') and (${props.options.map(o => `selected(., '${o}')`).join(' or ')}))`)
-  //   return this.k.questionWithChoices({
-  //     ...props,
-  //     options: [...props.options, 'unable_unwilling_to_answer'],
-  //     multiple: true,
-  //     constraint: `not(selected(., 'unable_unwilling_to_answer') and (${props.options.map(o => `selected(., '${o}')`).join(' or ')}))`
-  //   })
-  // }
+
+  readonly rating = (props: Partial<QuestionProps<I18n>>) => {
+    return this.k.questionWithChoices({
+      name: 'how_would_you_describe_the_relationship_between_member_of_the_host_community',
+      hint: 'leave_blank_if_none',
+      optional: true,
+      appearance: 'likert',
+      options: [
+        '_1_very_unsafe',
+        '_2_unsafe',
+        '_4_safe',
+        '_5_very_safe',
+      ],
+      ...props
+    })
+  }
 }

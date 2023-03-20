@@ -40,6 +40,8 @@ export class XlsFileGenerator<T extends I18n, Locale extends string> {
           ...this.addColumnWithLocales('label'),
           {column: 'required', type: String, value: (_: JSONQuestion<T, Locale>) => _.required ? 'true' : 'false'},
           {column: 'relevant', type: String, value: (_: JSONQuestion<T, Locale>) => _.relevant ?? ''},
+          {column: 'calculation', type: String, value: (_: JSONQuestion<T, Locale>) => _.calculation ?? ''},
+          {column: 'choice_filter', type: String, value: (_: JSONQuestion<T, Locale>) => _.choice_filter ?? ''},
           {column: 'appearance', type: String, value: (_: JSONQuestion<T, Locale>) => _.appearance ?? ''},
           {column: 'default', type: String, value: (_: JSONQuestion<T, Locale>) => _.default ?? ''},
           {column: 'constraint', type: String, value: (_: JSONQuestion<T, Locale>) => _.constraint ?? ''},
@@ -50,6 +52,7 @@ export class XlsFileGenerator<T extends I18n, Locale extends string> {
         [
           {column: 'list_name', type: String, value: (_: JSONChoices<T, Locale>) => _.list_name},
           {column: 'name', type: String, value: (_: JSONChoices<T, Locale>) => _.name},
+          {column: 'tag', type: String, value: (_: JSONChoices<T, Locale>) => _.tag ?? ''},
           ...this.getLocales().map(locale => ({
             column: `label::${locale} (${locale})`,
             type: String,

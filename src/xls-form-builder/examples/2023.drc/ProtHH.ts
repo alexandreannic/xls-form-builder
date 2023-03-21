@@ -28,15 +28,19 @@ export const protHH = async () => {
     })
 
     const common = new Common(k)
-    const showIfAccept: ShowIfCondition<I18n>[] = [{
-      questionName: 'have_you_filled_out_this_form_before',
-      value: 'no',
-      eq: 'eq',
-    }, {
-      questionName: 'present_yourself',
-      value: 'yes',
-      eq: 'eq',
-    }]
+    const hasMinorInHH = common.hasMinorInHH()
+    const hasAccepted: ShowIf<I18n> = {
+      showIfType: 'and',
+      showIf: [{
+        questionName: 'have_you_filled_out_this_form_before',
+        value: 'no',
+        op: '=',
+      }, {
+        questionName: 'present_yourself',
+        value: 'yes',
+        op: '=',
+      }]
+    }
     return [
       k.section({
         name: 'introduction',
@@ -74,10 +78,12 @@ export const protHH = async () => {
       }),
       k.section({
         name: 'basic_bio_data',
-        showIf: showIfAccept,
+        ...hasAccepted,
         questions: (() => {
           return [
-            common.location(),
+            common.location({
+              name: 'where_are_you_current_living',
+            }),
             k.questionWithChoices({
               name: 'is_your_hh_single_header',
               appearance: 'horizontal-compact',
@@ -143,8 +149,9 @@ export const protHH = async () => {
             k.question({
               type: 'INTEGER',
               name: 'how_many_individuals_including_the_respondent_are_in_the_household',
-              constraint: '. > 1',
+              constraint: '. > 0',
             }),
+            common.hhComposition(),
             k.questionWithChoicesAndSpecify({
               name: 'are_you_separated_from_any_of_your_households_members',
               options: [
@@ -153,6 +160,7 @@ export const protHH = async () => {
             }),
             k.questionWithChoices({
               multiple: true,
+              showIf: {questionName: 'are_you_separated_from_any_of_your_households_members', value: 'yes'},
               defineExclusiveOption: 'unable_unwilling_to_answer',
               name: 'who_are_you_separated_from',
               options: [
@@ -168,21 +176,21 @@ export const protHH = async () => {
             common.whereIsSeparatedMember('where_is_your_partner', {questionName: 'who_are_you_separated_from', value: 'partner'}),
             common.whyRemainBehind({name: 'where_is_your_partner_remain_behind_in_the_area_of_origin', ref: 'where_is_your_partner'}),
             common.whereIsSeparatedMember('where_is_your_child_lt_18', {questionName: 'who_are_you_separated_from', value: 'child_lt_18'}),
-            common.whyRemainBehind({name: 'where_is_your_child_lt_18_remain_behind_in_the_area_of_origin', ref: 'where_is_your_partner'}),
+            common.whyRemainBehind({name: 'where_is_your_child_lt_18_remain_behind_in_the_area_of_origin', ref: 'where_is_your_child_lt_18'}),
             common.whereIsSeparatedMember('where_is_your_child_gte_18', {questionName: 'who_are_you_separated_from', value: 'child_gte_18'}),
-            common.whyRemainBehind({name: 'where_is_your_child_gte_18_remain_behind_in_the_area_of_origin', ref: 'where_is_your_partner'}),
+            common.whyRemainBehind({name: 'where_is_your_child_gte_18_remain_behind_in_the_area_of_origin', ref: 'where_is_your_child_gte_18'}),
             common.whereIsSeparatedMember('where_is_your_mother', {questionName: 'who_are_you_separated_from', value: 'mother'}),
-            common.whyRemainBehind({name: 'where_is_your_mother_remain_behind_in_the_area_of_origin', ref: 'where_is_your_partner'}),
+            common.whyRemainBehind({name: 'where_is_your_mother_remain_behind_in_the_area_of_origin', ref: 'where_is_your_mother'}),
             common.whereIsSeparatedMember('where_is_your_father', {questionName: 'who_are_you_separated_from', value: 'father'}),
-            common.whyRemainBehind({name: 'where_is_your_father_remain_behind_in_the_area_of_origin', ref: 'where_is_your_partner'}),
+            common.whyRemainBehind({name: 'where_is_your_father_remain_behind_in_the_area_of_origin', ref: 'where_is_your_father'}),
             common.whereIsSeparatedMember('where_is_your_other_relative', {questionName: 'who_are_you_separated_from', value: 'other_relative'}),
-            common.whyRemainBehind({name: 'where_is_your_other_relative_remain_behind_in_the_area_of_origin', ref: 'where_is_your_partner'}),
+            common.whyRemainBehind({name: 'where_is_your_other_relative_remain_behind_in_the_area_of_origin', ref: 'where_is_your_other_relative'}),
           ]
         })()
       }),
       k.section({
         name: 'specific_needs',
-        showIf: showIfAccept,
+        ...hasAccepted,
         questions: (() => {
           const hasWgqLimitations: ShowIf<I18n> = {
             showIfType: 'or',
@@ -264,7 +272,7 @@ export const protHH = async () => {
       }),
       k.section({
         name: 'displacement_status_and_info',
-        showIf: showIfAccept,
+        ...hasAccepted,
         questions: (() => {
           return [
             k.questionWithChoices({
@@ -447,7 +455,7 @@ export const protHH = async () => {
         })(),
       }),
       k.section({
-        showIf: showIfAccept,
+        ...hasAccepted,
         name: 'registration_documentation',
         questions: (() => {
           return [
@@ -605,7 +613,7 @@ export const protHH = async () => {
       }),
       k.section({
         name: 'safety_n_movement',
-        showIf: showIfAccept,
+        ...hasAccepted,
         questions: (() => {
           return [
             common.rating({name: 'please_rate_your_sense_of_safety_in_this_location'}),
@@ -708,7 +716,7 @@ export const protHH = async () => {
       }),
       k.section({
         name: 'violence_coercion_n_deprivation',
-        showIf: showIfAccept,
+        ...hasAccepted,
         questions: (() => {
           return [
             k.calculate({
@@ -790,22 +798,22 @@ export const protHH = async () => {
               name: 'do_household_members_experiencing_distress_have_access_to_relevant_care_and_services',
               appearance: 'horizontal-compact',
               showIf: [
-                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'feeling_sad_depressed_tired'},
-                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'withdrawal_isolation'},
-                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'anxiety'},
-                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'anger'},
-                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'fear'},
-                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'agitation_moodiness'},
-                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'careless'},
-                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'feeling_hopeless'},
-                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'feeling_sad_depressed_tired'},
-                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'withdrawal_isolation'},
-                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'anxiety'},
-                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'anger'},
-                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'fear'},
-                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'agitation_moodiness'},
-                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'careless'},
-                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'feeling_hopeless'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', op: '=', value: 'feeling_sad_depressed_tired'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', op: '=', value: 'withdrawal_isolation'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', op: '=', value: 'anxiety'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', op: '=', value: 'anger'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', op: '=', value: 'fear'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', op: '=', value: 'agitation_moodiness'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', op: '=', value: 'careless'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', op: '=', value: 'feeling_hopeless'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', op: '=', value: 'feeling_sad_depressed_tired'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', op: '=', value: 'withdrawal_isolation'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', op: '=', value: 'anxiety'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', op: '=', value: 'anger'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', op: '=', value: 'fear'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', op: '=', value: 'agitation_moodiness'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', op: '=', value: 'careless'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', op: '=', value: 'feeling_hopeless'},
               ],
               options: [
                 'yes', 'no', 'unable_unwilling_to_answer',
@@ -849,7 +857,7 @@ export const protHH = async () => {
       }),
       k.section({
         name: 'coping_strategies',
-        showIf: showIfAccept,
+        ...hasAccepted,
         questions: (() => {
           return [
             k.questionWithChoicesAndOtherSpecify({
@@ -923,7 +931,8 @@ export const protHH = async () => {
       }),
       k.section({
         name: 'access_to_education',
-        showIf: showIfAccept,
+        showIfType: 'and',
+        showIf: [hasAccepted, hasMinorInHH],
         questions: (() => {
           return [
             k.questionWithChoices({
@@ -979,11 +988,11 @@ export const protHH = async () => {
       }),
       k.section({
         name: 'housing',
-        showIf: showIfAccept,
+        ...hasAccepted,
         questions: (() => {
           const hasAccommodation: ShowIfCondition<I18n>[] = [{
             questionName: 'what_is_your_current_housing_structure',
-            eq: 'neq',
+            op: '!=',
             value: 'no_shelter',
           }]
           return [
@@ -1074,7 +1083,7 @@ export const protHH = async () => {
       }),
       k.section({
         name: 'access_to_health',
-        showIf: showIfAccept,
+        ...hasAccepted,
         questions: (() => {
           return [
             k.questionWithChoices({
@@ -1113,7 +1122,7 @@ export const protHH = async () => {
       }),
       k.section({
         name: 'sec_priority_needs',
-        showIf: showIfAccept,
+        ...hasAccepted,
         questions: (() => {
           return [
             common.priorityNeeds({name: 'what_is_your_1_priority'}),
@@ -1125,7 +1134,7 @@ export const protHH = async () => {
       }),
       k.section({
         name: 'sec_additional_information',
-        showIf: showIfAccept,
+        ...hasAccepted,
         questions: (() => {
           return [
             k.question({type: 'TEXTAREA', name: 'additional_information_shared_by_respondent', optional: true}),
@@ -1135,7 +1144,7 @@ export const protHH = async () => {
       }),
       k.section({
         name: 'sec_followup',
-        showIf: showIfAccept,
+        ...hasAccepted,
         questions: [
           k.questionWithChoices({
             name: 'need_for_assistance',

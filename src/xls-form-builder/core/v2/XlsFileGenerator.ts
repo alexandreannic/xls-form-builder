@@ -28,8 +28,8 @@ export class XlsFileGenerator<T extends I18n, Locale extends string> {
       this.params.form.options,
       [{
         form_title: this.params.form.meta.title,
-        style: 'theme-grid no-text-transform',
-        version: `${this.params.form.meta.version ?? 1} (${new Date().toUTCString()})`
+        version: `${this.params.form.meta.version ?? 1} (${new Date().toUTCString()})`,
+        style: this.params.form.meta.style,
       }]
     ], {
       sheets: ['survey', 'choices', 'settings'],
@@ -51,17 +51,18 @@ export class XlsFileGenerator<T extends I18n, Locale extends string> {
         [
           {column: 'list_name', type: String, value: (_: JSONChoices<T, Locale>) => _.list_name},
           {column: 'name', type: String, value: (_: JSONChoices<T, Locale>) => _.name},
-          {column: 'tag', type: String, value: (_: JSONChoices<T, Locale>) => _.tag ?? ''},
-          {column: 'tag1', type: String, value: (_: JSONChoices<T, Locale>) => _.tag1 ?? ''},
           ...this.getLocales().map(locale => ({
             column: `label::${locale} (${locale})`,
             type: String,
             value: (_: JSONChoices<T, Locale>) => _.label.find(_ => _.locale === locale)?.text ?? '',
           })),
+          {column: 'tag', type: String, value: (_: JSONChoices<T, Locale>) => _.tag ?? ''},
+          {column: 'tag1', type: String, value: (_: JSONChoices<T, Locale>) => _.tag1 ?? ''},
         ],
         [
           {column: 'form_title', type: String, value: (_: any) => _.form_title},
           {column: 'version', type: String, value: (_: any) => _.version},
+          {column: 'style', type: String, value: (_: any) => _.style ?? ''},
         ]],
       filePath: this.params.path + '/' + Utils.sanitizeString(this.params.form.meta.title) + '.xls'
     })

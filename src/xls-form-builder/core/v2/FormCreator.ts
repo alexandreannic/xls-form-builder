@@ -2,10 +2,13 @@ import {Utils} from '../Utils'
 
 export type I18n = Record<string, string>
 
+export type KoboTheme = 'theme-grid no-text-transform'
+
 export interface Form2<L extends I18n> {
   title: string
   version?: string
   sections: Section<L>[]
+  style?: KoboTheme
 }
 
 export interface Section<L extends I18n> extends ShowIf<L> {
@@ -29,20 +32,28 @@ export type QuestionType = QuestionTypeWithChoices | QuestionTypeWithoutOptions
 
 export interface ShowIfCondition<L extends I18n> {
   questionName: string
-  value: keyof L
-  eq?: 'eq' | 'neq'
+  value: keyof L | string | number
+  op?: '=' | '!=' | '<' | '>' | '>=' | '<='
 }
 
 type ShowIfType = 'and' | 'or'
 
 export interface ShowIf<L extends I18n> {
-  showIf?: ShowIfCondition<L>[] | ShowIfCondition<L>
+  showIf?: ShowIfCondition<L>[] | ShowIfCondition<L> | ShowIf<L>[]
   showIfType?: ShowIfType
+}
+
+export const isShowIf = <T extends I18n>(_: any): _ is ShowIf<T> => {
+  return !!_.showIfType
+}
+export const isShowIfCondition = <T extends I18n>(_: any): _ is ShowIfCondition<T> => {
+  return !!_.questionName
 }
 
 export interface Question2<L extends I18n> extends ShowIf<L> {
   id?: string
-  appearance?: 'horizontal' | 'minimal' | 'horizontal-compact' | 'likert'
+  col?: number,
+  appearance?: 'minimal autocomplete' | 'autocomplete' | 'horizontal' | 'minimal' | 'horizontal-compact' | 'likert'
   name: string
   default?: string
   calculation?: string
@@ -60,6 +71,7 @@ export interface Question2<L extends I18n> extends ShowIf<L> {
   italic?: boolean
   color?: string
   size?: 'small' | 'normal' | 'big'
+  borderTop?: boolean
 }
 
 export interface Choice<L extends I18n> {

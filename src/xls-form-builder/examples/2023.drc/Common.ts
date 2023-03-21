@@ -1,9 +1,104 @@
-import {FormCreator, Question2, QuestionProps, ShowIfCondition} from '../../core/v2/FormCreator'
+import {FormCreator, Question2, QuestionProps, ShowIf, ShowIfCondition} from '../../core/v2/FormCreator'
 import {I18n} from './i18n/en'
 import {Utils} from '../../core/Utils'
+import {Enum, mapFor} from '@alexandreannic/ts-utils'
+import {oblast} from '../../location/oblast'
+import {raions} from '../../location/raion'
+import {hromada} from '../../location/hromada'
 
 export class Common {
   constructor(private k: FormCreator<I18n>) {
+  }
+
+  static readonly maxHHComposition = 9
+
+  readonly hasMinorInHH = (): ShowIf<I18n> => {
+    return {
+      showIfType: 'or',
+      showIf: mapFor(Common.maxHHComposition, i => {
+        return {
+          questionName: 'hh_age_' + (i + 1),
+          op: '<',
+          value: 18
+        }
+      })
+    }
+  }
+
+  readonly hhComposition = (): Question2<I18n>[] => {
+    return mapFor(Common.maxHHComposition, i => {
+      return [
+        this.k.questionWithChoices({
+          name: 'hh_sex_' + (i + 1),
+          size: 'small',
+          bold: false,
+          showIf: {questionName: 'how_many_individuals_including_the_respondent_are_in_the_household', op: '>=', value: i + 1 as any},
+          appearance: 'horizontal-compact',
+          borderTop: true,
+          options: [
+            'male',
+            'female',
+            'other',
+            'unable_unwilling_to_answer',
+          ]
+        }),
+        this.k.question({
+          type: 'INTEGER',
+          name: 'hh_age_' + (i + 1),
+          constraint: '. > 0 and . < 150',
+          showIf: {questionName: 'how_many_individuals_including_the_respondent_are_in_the_household', op: '>=', value: i + 1 as any},
+          size: 'small',
+          bold: false,
+        })
+      ]
+    }).flat()
+  }
+
+  readonly location = ({
+    name = 'location',
+    ...props
+  }: Partial<QuestionProps<I18n>> = {}) => {
+    const id = Utils.makeid()
+    const label: any = props.label ?? name
+    const getName = (q: string) => name + '_' + q + '_' + id
+    return [
+      this.k.label({
+        name: getName('label'),
+        label,
+        ...props
+      }),
+      this.k.questionWithChoices({
+        size: 'small',
+        bold: false,
+        label: 'oblast',
+        appearance: 'minimal autocomplete',
+        name: getName('oblast'),
+        options: Enum.keys(oblast).map(k => ({name: k})),
+        ...props
+      }),
+      this.k.questionWithChoices({
+        label: 'raion',
+        size: 'small',
+        appearance: 'minimal autocomplete',
+        bold: false,
+        name: getName('raion'),
+        choiceFilter: `tag=\${${getName('oblast')}}`,
+        options: Enum.entries(raions).map(([k, v]) => ({name: k, tag: v.parent})),
+        ...props
+      }),
+      this.k.questionWithChoices({
+        size: 'small',
+        label: 'hromada',
+        appearance: 'minimal autocomplete',
+        bold: false,
+        name: getName('hromada'),
+        choiceFilter: `tag=\${${getName('raion')}} or tag1=\${${getName('oblast')}}`,
+        options: Enum.entries(hromada).map(([k, v]) => {
+          return ({name: k, tag: v.parent, tag1: raions[v.parent as keyof typeof raions].parent})
+        }),
+        ...props
+      })
+    ]
   }
 
   readonly protStaffCode = () => {
@@ -38,17 +133,6 @@ export class Common {
         'private_housing',
         'collective_centre',
         'village_settlement',
-      ]
-    })
-  }
-
-  readonly location = (props?: Pick<QuestionProps<I18n>, 'label' | 'showIf' | 'showIfType' | 'name' | 'optional'>) => {
-    return this.k.questionWithChoices({
-      name: 'what_oblast_current_living',
-      ...props,
-      options: [
-        'Avtonomna Respublika Krym' as any,
-        'Dnipropetrovska' as any,
       ]
     })
   }

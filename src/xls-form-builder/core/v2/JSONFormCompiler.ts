@@ -1,9 +1,13 @@
 import {Utils} from '../Utils'
-import {Choice, Form2, I18n, Question2, QuestionType} from './FormCreator'
+import {Choice, Form2, I18n, isShowIf, isShowIfCondition, KoboTheme, Question2, QuestionType, ShowIfCondition} from './FormCreator'
 import {Enum} from '@alexandreannic/ts-utils'
 
 export interface JSONForm<T extends I18n, Locale extends string> {
-  meta: {title: string, version?: string}
+  meta: {
+    title: string,
+    version?: string
+    style?: KoboTheme
+  }
   questions: JSONQuestion<T, Locale>[]
   options: JSONChoices<T, Locale>[]
 }
@@ -15,8 +19,6 @@ export interface JSONChoices<L extends I18n, Locale extends string> {
   tag?: string
   tag1?: string
 }
-
-export type KoboTheme = 'theme-grid no-text-transform'
 
 type JSONQuestionType = 'end_group'
   | 'begin_group'
@@ -55,6 +57,7 @@ interface QuestionWithI18n<T extends I18n, Locale extends string> extends Omit<Q
 }
 
 export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
+  static readonly formWidth = 620
   private collectedOptions: {[key: string]: Choice<T>[]} = {}
   private titlesIndex = 0
   private subTitlesIndex = 1
@@ -84,6 +87,7 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
     const form = {
       version: this.props.form.version,
       title: this.props.form.title,
+      style: this.props.form.style,
     }
     const questions = this.props.form.sections.flatMap(s => {
       this.subTitlesIndex = 1
@@ -93,6 +97,7 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
           type: 'begin_group',
           name: `group_${s.name as string}`,
           label: this.translate(s.name).map(_ => ({..._, text: this.props.numberOnTitles ? `${this.titlesIndex}. ${_.text}` : _.text})),
+          appearance: 'w12',
           relevant: this.mapRelevant(s),
         },
         ...this.buildQuestions(s.questions),
@@ -124,7 +129,7 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
       // .map(this.applyHintStyle)
       .map(this.mapQuestionToXLSForm)
   }
-  
+
   private readonly applyQuestionNumeration = (q: QuestionWithI18n<T, Locale>): QuestionWithI18n<T, Locale> => {
     const ignoredType: QuestionType[] = [
       'CALCULATE',
@@ -137,7 +142,7 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
     const subTitles = this.subTitlesIndex
     const numeration = (() => {
       if (q.showIf) {
-        const parentName = [q.showIf].flat()[0].questionName as string
+        const parentName = ([q.showIf].flat(10)[0] as ShowIfCondition<I18n>).questionName as string
         const parentNum = this.enumerationNamesIndex.get(parentName)
         const childNum = (this.childEnumerationNamesIndex.get(parentName) ?? 0) + 1
         this.childEnumerationNamesIndex.set(parentName, childNum)
@@ -182,7 +187,7 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
       required: !q.optional,
       type: this.mapQuestionTypeToXLSForm(q.type) + (q.optionsId ? ' ' + q.optionsId : ' '),
       relevant: this.mapRelevant(q),
-      appearance: q.type === 'TEXTAREA' ? 'multiline' : q.appearance,
+      appearance: (q.type === 'TEXTAREA' ? 'multiline' : q.appearance ?? '') + (q.col ? ` w${q.col}` : ''),
       hint: q.hint,
       guidance_hint: q.guidanceHint,
       constraint_message: q.constraintMessage,
@@ -193,27 +198,22 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
     if (q.type === 'DIVIDER') {
       q.label = q.label.map(_ => ({
         ..._,
-        text: `<span style="display: block; width: 620px; margin-top: 12px; color: transparent; border-top: 1px solid rgba(0, 0, 0, 0.12)">Test</span>`
+        text: `<span style="display: block; width: ${JSONFormCompiler.formWidth}px; margin-top: 12px; color: transparent; border-top: 1px solid rgba(0, 0, 0, 0.12)">Test</span>`
       }))
+      return q
     }
-    if (q.type === 'TITLE') {
-      q.label = q.label.map(_ => ({..._, text: `####${_.text}`}))
+    const css = {
+      ...q.borderTop && {'display': 'block', width: JSONFormCompiler.formWidth + 'px', 'padding-top': '12px', 'border-top': '1px solid rgba(0,0,0,0.12)'},
+      ...q.type === 'TITLE' && {'font-size': '1.2em'},
+      ...q.size === 'small' && {'font-size': '.875em'},
+      ...q.size === 'big' && {'font-size': '.1.125em'},
+      ...q.italic && {'font-style': 'italic'},
+      ...q.bold && {'font-weight': 'bold'},
+      ...q.bold === false && {'font-weight': 'normal'},
+      ...q.color && {'color': q.color},
     }
-    if (q.size === 'small') {
-      q.label = q.label.map(_ => ({..._, text: `<sup>${_.text}</sup>`}))
-    }
-    if (q.size === 'big') {
-      q.label = q.label.map(_ => ({..._, text: `<span style="font-size: 1.15em">${_.text}</span>`}))
-    }
-    if (q.italic) {
-      q.label = q.label.map(_ => ({..._, text: `*${_.text}*`}))
-    }
-    if (q.bold) {
-      q.label = q.label.map(_ => ({..._, text: `**${_.text}**`}))
-    }
-    if (q.color) {
-      q.label = q.label.map(_ => ({..._, text: `<span style="color: ${q.color}">${_.text}</span>`}))
-    }
+    const stringCss = Object.entries(css).map(([k, v]) => `${k}:${v}`).join(';')
+    q.label = q.label.map(_ => ({..._, text: `<span style="${stringCss}">${_.text}</span>`}))
     return q
   }
 
@@ -263,16 +263,25 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
     if (t.showIf) {
       return [t.showIf].flat()
         .map(condition => {
-          const valueName = this.findQuestionByName(condition.questionName).options?.find(_ => _.name === condition.value)?.name as string
-          if (!valueName) {
-            throw new Error(`Options '${condition.value as string}' does not exist for question ${JSON.stringify(condition.questionName)}`)
+          if (isShowIf(condition)) return '(' + (this.mapRelevant(condition) ?? '') + ')'
+          if (isShowIfCondition(condition)) {
+            const valueName = this.findQuestionByName(condition.questionName).options?.find(_ => _.name === condition.value)?.name as string
+            if (condition.op) {
+              return `\${${condition.questionName as string}}${condition.op ?? '='}'${valueName ?? condition.value}'`
+            }
+            if (!valueName) {
+              throw new Error(`Options '${condition.value as string}' does not exist for question ${JSON.stringify(condition.questionName)}`)
+            }
+            return `selected(\${${condition.questionName as string}}, '${valueName}')`
           }
-          if (condition.eq === 'neq') {
-            return `\${${condition.questionName as string}}${condition.eq === 'neq' ? '!=' : '='}'${valueName}'`
-          }
-          return `selected(\${${condition.questionName as string}}, '${valueName}')`
         })
         .join(` ${t.showIfType ?? 'and'} `)
     }
   }
 }
+
+// NaN
+// ${have_you_filled_out_this_form_before}='no' 
+// and ${present_yourself}='yes') 
+// and NaN${hh_sex_1}<'18' 
+// or ${hh_sex_2}<'18' or ${hh_sex_3}<'18' or ${hh_sex_4}<'18' or ${hh_sex_5}<'18' or ${hh_sex_6}<'18' or ${hh_sex_7}<'18' or ${hh_sex_8}<'18' or ${hh_sex_9}<'18')

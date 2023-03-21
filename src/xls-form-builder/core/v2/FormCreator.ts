@@ -5,12 +5,12 @@ export type I18n = Record<string, string>
 export interface Form2<L extends I18n> {
   title: string
   version?: string
-  sections: () => Section<L>[]
+  sections: Section<L>[]
 }
 
 export interface Section<L extends I18n> extends ShowIf<L> {
   name: keyof L
-  questions: () => (Question2<L> | Question2<L>[])[]
+  questions: (Question2<L> | Question2<L>[])[]
 }
 
 export type QuestionTypeWithChoices = 'CHECKBOX' | 'RADIO'
@@ -28,7 +28,7 @@ export type QuestionTypeWithoutOptions = 'TEXT' |
 export type QuestionType = QuestionTypeWithChoices | QuestionTypeWithoutOptions
 
 export interface ShowIfCondition<L extends I18n> {
-  questionName: keyof L
+  questionName: string
   value: keyof L
   eq?: 'eq' | 'neq'
 }
@@ -41,14 +41,15 @@ export interface ShowIf<L extends I18n> {
 }
 
 export interface Question2<L extends I18n> extends ShowIf<L> {
+  id?: string
   appearance?: 'horizontal' | 'minimal' | 'horizontal-compact' | 'likert'
-  name: keyof L
+  name: string
   default?: string
   calculation?: string
   type: QuestionType
   optionsId?: string
   choiceFilter?: string
-  // label: keyof L
+  label?: keyof L
   hint?: keyof L
   // guidanceHint?: keyof L
   optional?: boolean
@@ -65,6 +66,7 @@ export interface Choice<L extends I18n> {
   // label: keyof L
   name: keyof L
   tag?: string
+  tag1?: string
 }
 
 interface ChoiceWithSpecify<L extends I18n> extends Choice<L> {
@@ -84,6 +86,8 @@ export const isQuestions = <L extends I18n>(s: Section<L> | Question2<L>): s is 
 
 export class FormCreator<L extends I18n> {
 
+  private readonly maxOptionsBeforeDropDown = 9
+
   constructor(private i18n: {
     specifyLabel: keyof L,
     specifyOptionLabel: keyof L,
@@ -101,7 +105,7 @@ export class FormCreator<L extends I18n> {
   }
 
   readonly divider = () => {
-    return this.question({type: 'DIVIDER', name: 'divider'})
+    return this.question({type: 'DIVIDER', name: 'divider' + Utils.makeid()})
   }
 
   readonly section = (props: Section<L>): Section<L> => {
@@ -123,6 +127,7 @@ export class FormCreator<L extends I18n> {
   private readonly registerQuestion = (q: Question2<L>): Question2<L> => {
     return {
       ...q,
+      label: q.label ?? q.name,
     }
   }
 
@@ -156,15 +161,19 @@ export class FormCreator<L extends I18n> {
     options: Choice<L>[] | (keyof L)[],
     defineExclusiveOption?: keyof L | (keyof L)[],
   }): Question2<L> => {
+    const options = props.options.map(_ => typeof _ === 'object' ? _ : ({name: _}))
+    const exclusions = [props.defineExclusiveOption ?? []].flat()
+    const noExclusions = options.filter(_ => !exclusions.includes(_.name))
     return this.registerQuestion({
+      appearance: props.options.length > this.maxOptionsBeforeDropDown ? 'minimal' : undefined,
       ...props,
       ...props.defineExclusiveOption && {
-        constraint: [props.defineExclusiveOption ?? []].flat().map(_ =>
-          `not(selected(., '${_ as string}') and (${props.options.map(o => `selected(., '${o as string}')`).join(' or ')}))`,
+        constraint: exclusions.map(_ =>
+          `not(selected(., '${_ as string}') and (${noExclusions.map(o => `selected(., '${o.name as string}')`).join(' or ')}))`,
         ).join(' and ')
       },
       type: props.multiple ? 'CHECKBOX' : 'RADIO',
-      options: props.options.map(_ => typeof _ === 'object' ? _ : ({name: _})),
+      options,
     })
   }
 
@@ -172,7 +181,7 @@ export class FormCreator<L extends I18n> {
     multiple?: boolean
     options: (ChoiceWithSpecify<L> | keyof L)[],
     defineExclusiveOption?: keyof L | (keyof L)[],
-  }) => {
+  }): Question2<L>[] => {
     return this.questionWithChoicesAndSpecify({
       ...props,
       options: [
@@ -197,9 +206,10 @@ export class FormCreator<L extends I18n> {
       .filter(_ => _.specify === true)
       .map(_ => {
         return this.question({
-          name: this.i18n.specifyLabel,
+          name: (this.i18n.specifyLabel as string) + Utils.makeid(),
+          label: this.i18n.specifyLabel,
           type: 'TEXT',
-          optional: props?.optional,
+          optional: true,
           showIf: [{questionName: radio.name, value: _.name}]
         })
       })

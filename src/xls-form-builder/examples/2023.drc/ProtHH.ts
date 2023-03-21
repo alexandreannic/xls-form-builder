@@ -10,7 +10,7 @@ export const protHH = async () => {
     numberOnTitles: true,
     form: {
       title: 'prot.hh.v2',
-      sections: () => buildForm(),
+      sections: buildForm(),
     },
     translations: {en: i18n_en, ua: i18n_ua},
   }).buildForm()
@@ -40,7 +40,7 @@ export const protHH = async () => {
     return [
       k.section({
         name: 'introduction',
-        questions: () => {
+        questions: (() => {
           return [
             common.protStaffCode(),
             common.drcOffice(),
@@ -70,16 +70,17 @@ export const protHH = async () => {
               showIf: {questionName: 'have_you_filled_out_this_form_before', value: 'yes'},
             })
           ]
-        }
+        })()
       }),
       k.section({
         name: 'basic_bio_data',
         showIf: showIfAccept,
-        questions: () => {
+        questions: (() => {
           return [
             common.location(),
             k.questionWithChoices({
               name: 'is_your_hh_single_header',
+              appearance: 'horizontal-compact',
               options: [
                 'yes', 'no', 'unable_unwilling_to_answer',
               ],
@@ -87,7 +88,7 @@ export const protHH = async () => {
             k.questionWithChoicesAndOtherSpecify({
               name: 'do_any_of_these_specific_needs_categories_apply_to_the_head_of_this_household',
               multiple: true,
-              defineExclusiveOption: 'unable_unwilling_to_answer',
+              defineExclusiveOption: ['unable_unwilling_to_answer', 'no_specific_needs'],
               options: [
                 'pregnant_and_Lactating_woman_',
                 'child_headed_household',
@@ -142,6 +143,7 @@ export const protHH = async () => {
             k.question({
               type: 'INTEGER',
               name: 'how_many_individuals_including_the_respondent_are_in_the_household',
+              constraint: '. > 1',
             }),
             k.questionWithChoicesAndSpecify({
               name: 'are_you_separated_from_any_of_your_households_members',
@@ -164,33 +166,26 @@ export const protHH = async () => {
               ]
             }),
             common.whereIsSeparatedMember('where_is_your_partner', {questionName: 'who_are_you_separated_from', value: 'partner'}),
+            common.whyRemainBehind({name: 'where_is_your_partner_remain_behind_in_the_area_of_origin', ref: 'where_is_your_partner'}),
             common.whereIsSeparatedMember('where_is_your_child_lt_18', {questionName: 'who_are_you_separated_from', value: 'child_lt_18'}),
+            common.whyRemainBehind({name: 'where_is_your_child_lt_18_remain_behind_in_the_area_of_origin', ref: 'where_is_your_partner'}),
             common.whereIsSeparatedMember('where_is_your_child_gte_18', {questionName: 'who_are_you_separated_from', value: 'child_gte_18'}),
+            common.whyRemainBehind({name: 'where_is_your_child_gte_18_remain_behind_in_the_area_of_origin', ref: 'where_is_your_partner'}),
             common.whereIsSeparatedMember('where_is_your_mother', {questionName: 'who_are_you_separated_from', value: 'mother'}),
+            common.whyRemainBehind({name: 'where_is_your_mother_remain_behind_in_the_area_of_origin', ref: 'where_is_your_partner'}),
             common.whereIsSeparatedMember('where_is_your_father', {questionName: 'who_are_you_separated_from', value: 'father'}),
+            common.whyRemainBehind({name: 'where_is_your_father_remain_behind_in_the_area_of_origin', ref: 'where_is_your_partner'}),
             common.whereIsSeparatedMember('where_is_your_other_relative', {questionName: 'who_are_you_separated_from', value: 'other_relative'}),
-            k.questionWithChoicesAndOtherSpecify({
-              name: 'why_did_the_family_memberrelative_remain_behind_in_the_area_of_origin',
-              options: [
-                'stayed_to_defend_the_community',
-                'were_unable_to_flee_as_a_result_of_age_or_physical_impairment',
-                'did_not_want_to_leave_the_area',
-                'lacked_resources_to_travel',
-                'unable_to_travel_due_to_safety_and_security_concerns',
-                'fear_of_conscription',
-                'stayed_to_take_care_of_properties',
-                'unable_unwilling_to_answer',
-              ],
-            })
+            common.whyRemainBehind({name: 'where_is_your_other_relative_remain_behind_in_the_area_of_origin', ref: 'where_is_your_partner'}),
           ]
-        }
+        })()
       }),
       k.section({
         name: 'specific_needs',
         showIf: showIfAccept,
-        questions: () => {
+        questions: (() => {
           const hasWgqLimitations: ShowIf<I18n> = {
-            showIfType: 'and',
+            showIfType: 'or',
             showIf: [
               {questionName: 'do_you_have_a_household_member_that_has_a_lot_of_difficulty', value: 'wg_seeing_even_if_wearing_glasses'},
               {questionName: 'do_you_have_a_household_member_that_has_a_lot_of_difficulty', value: 'wg_hearing_even_if_using_a_hearing_aid'},
@@ -229,8 +224,9 @@ export const protHH = async () => {
               appearance: 'horizontal-compact',
               ...hasWgqLimitations,
             }),
-            k.questionWithChoices({
-              name: 'why',
+            k.questionWithChoicesAndOtherSpecify({
+              showIf: {questionName: 'do_you_or_anyone_in_your_household_have_a_disability_status_from_the_gov', value: 'no'},
+              name: 'why_dont_have_status',
               options: [
                 'status_registration_rejected_not_meeting_the_criteria_as_per_ukrainian_procedure',
                 'status_renewal_rejected',
@@ -252,17 +248,24 @@ export const protHH = async () => {
               ]
             }),
             k.questionWithChoices({
-              name: 'Does_the_household_host_children_who_are_not_relatives',
+              name: 'does_the_household_host_children_who_are_relatives',
+              hint: 'does_the_household_host_children_who_are_relatives_hint',
+              options: ['yes', 'no', 'unable_unwilling_to_answer'],
+              appearance: 'horizontal-compact',
+            }),
+            k.questionWithChoices({
+              name: 'does_the_household_host_children_who_are_not_relatives',
+              hint: 'does_the_household_host_children_who_are_not_relatives_hint',
               options: ['yes', 'no', 'unable_unwilling_to_answer'],
               appearance: 'horizontal-compact',
             })
           ]
-        }
+        })()
       }),
       k.section({
         name: 'displacement_status_and_info',
         showIf: showIfAccept,
-        questions: () => {
+        questions: (() => {
           return [
             k.questionWithChoices({
               name: 'do_you_identify_as_any_of_the_following',
@@ -298,6 +301,8 @@ export const protHH = async () => {
               showIf: {questionName: 'do_you_identify_as_any_of_the_following', value: 'idp'},
               name: 'when_did_you_leave_your_area_of_origin',
               type: 'DATE',
+              constraint: '. < today()',
+              constraintMessage: 'date_should_be_past',
             }),
             k.questionWithChoicesAndOtherSpecify({
               showIf: {questionName: 'do_you_identify_as_any_of_the_following', value: 'idp'},
@@ -399,11 +404,15 @@ export const protHH = async () => {
             k.question({
               type: 'DATE',
               name: 'when_did_you_first_leave_your_area_of_origin',
+              constraint: '. < today()',
+              constraintMessage: 'date_should_be_past',
             }),
             k.question({
               showIf: {questionName: 'do_you_identify_as_any_of_the_following', value: 'returnee'},
               name: 'when_did_you_return_to_your_area_of_origin',
               type: 'DATE',
+              constraint: '. < today()',
+              constraintMessage: 'date_should_be_past',
             }),
             k.questionWithChoicesAndOtherSpecify({
               multiple: true,
@@ -435,12 +444,12 @@ export const protHH = async () => {
               ]
             })
           ]
-        },
+        })(),
       }),
       k.section({
         showIf: showIfAccept,
         name: 'registration_documentation',
-        questions: () => {
+        questions: (() => {
           return [
             k.questionWithChoices({
               multiple: true,
@@ -499,7 +508,7 @@ export const protHH = async () => {
             }),
             k.questionWithChoicesAndOtherSpecify({
               showIf: {questionName: 'do_you_and_your_hh_members_receive_the_idp_allowance', value: 'no'},
-              name: 'why',
+              name: 'why_they_do_not_receive',
               options: [
                 'delays_in_allowances_payment',
                 'change_of_place_of_residence',
@@ -523,7 +532,7 @@ export const protHH = async () => {
               ]
             }),
             k.questionWithChoicesAndOtherSpecify({
-              name: 'why',
+              name: 'why_not_registered',
               showIf: [
                 {questionName: 'why_are_you_not_registered', value: 'registration_was_rejected'},
                 {questionName: 'why_are_you_not_registered', value: 'not_entitled_to_register_as_an_idp'},
@@ -592,12 +601,12 @@ export const protHH = async () => {
               ]
             })
           ]
-        }
+        })()
       }),
       k.section({
         name: 'safety_n_movement',
         showIf: showIfAccept,
-        questions: () => {
+        questions: (() => {
           return [
             common.rating({name: 'please_rate_your_sense_of_safety_in_this_location'}),
             k.questionWithChoicesAndOtherSpecify({
@@ -625,12 +634,14 @@ export const protHH = async () => {
             }),
             k.questionWithChoices({
               name: 'is_this_area_contaminated',
+              appearance: 'horizontal-compact',
               options: [
                 'yes', 'no',
               ]
             }),
             k.questionWithChoices({
               name: 'do_you_know_what_number_to_call_if_coming_across_an_explosive_ordnance',
+              appearance: 'horizontal-compact',
               showIf: {questionName: 'is_this_area_contaminated', value: 'yes'},
               options: [
                 'yes', 'no',
@@ -693,67 +704,445 @@ export const protHH = async () => {
               ]
             })
           ]
-        }
-
+        })()
       }),
       k.section({
         name: 'violence_coercion_n_deprivation',
         showIf: showIfAccept,
-        questions: () => {
+        questions: (() => {
           return [
-            k.questionWithChoices({
-              name: 'has_any_adult_male_member_of_your_household_experienced_any_form_of_violence_within_the_last_6_months',
-              appearance: 'horizontal-compact',
-              options: ['yes', 'no', 'unable_unwilling_to_answer'],
-            }),
-            k.questionWithChoicesAndOtherSpecify({
-              name: 'what_type_of_incidents_took_place',
-              showIf: {questionName: 'has_any_adult_male_member_of_your_household_experienced_any_form_of_violence_within_the_last_6_months', value: 'yes'},
-              appearance: 'minimal',
-              multiple: true,
-              hint: 'do_not_read_out_options',
-              options: [
-                'killing_incl_extrajudicial_execution',
-                'killing_injury_due_to_indiscriminate_attacks',
-                'abduction_kidnapping_or_enforced_disappearance',
-                'arbitrary_arrest_detention',
-                'forced_recruitment_by_armed_actors',
-                'physical_assault',
-                'sexual_exploitation_and_abuse',
-                'rape',
-                'torture_or_inhumane_cruel_and_degrading_treatment',
-                'forced_or_exploitative_labour',
-                'trafficking_incl_forced_prostitution_organ_harvesting',
-                'denial_of_right_to_return',
-                'forced_internal_displacement',
-                'forced_return_idp_only',
-                'denial_of_access_to_basic_services_humanitarian_assistance',
-                'forced_eviction',
-                'destruction_of_property',
-                'occupation_of_property',
-                'extortion_of_property',
-                'theft_and_robbery',
-                'lack_of_confiscation_or_denial_of_civil_documentation',
-                'denial_of_travel_documents',
-                'denial_of_idp_registration',
-              ]
-            }),
             k.calculate({
               name: 'get_tag_if_is_displaced',
-              calculation: `if(\${do_you_identify_as_any_of_the_following}='idp', 'displaced') `,
+              calculation: `if(\${do_you_identify_as_any_of_the_following}='idp', 'displaced', 'all') `,
+            }),
+            common.incidentsForm('has_any_adult_male_member_of_your_household_experienced_any_form_of_violence_within_the_last_6_months'),
+            k.divider(),
+            common.incidentsForm('has_any_adult_female_member_of_your_household_experienced_any_protectionright_violation_incident'),
+            k.divider(),
+            common.incidentsForm('has_any_boy_member_of_your_household_experienced_any_protectionright_violation_incident'),
+            k.divider(),
+            common.incidentsForm('has_any_girl_member_of_your_household_experienced_any_protectionright_violation_incident'),
+            k.divider(),
+            common.incidentsForm('has_any_member_of_your_household_experienced_any_protectionright_violation_incident'),
+            k.divider(),
+            k.questionWithChoices({
+              name: 'do_you_or_members_of_your_household_experience_discrimination_or_stigmatization_in_your_current_area_of_residence',
+              options: [
+                'yes', 'no', 'unable_unwilling_to_answer',
+              ]
+            }),
+            k.questionWithChoicesAndOtherSpecify({
+              name: 'on_what_ground',
+              multiple: true,
+              appearance: 'minimal',
+              showIf: {questionName: 'do_you_or_members_of_your_household_experience_discrimination_or_stigmatization_in_your_current_area_of_residence', value: 'yes'},
+              defineExclusiveOption: 'unable_unwilling_to_answer',
+              options: [
+                'age',
+                'gender',
+                'disability',
+                'nationality',
+                'area_of_origin',
+                'religion',
+                'sexual_orientation',
+                'political_opinions',
+                'medical_condition',
+                'unable_unwilling_to_answer',
+              ]
+            }),
+            k.questionWithChoicesAndOtherSpecify({
+              name: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs',
+              appearance: 'minimal',
+              multiple: true,
+              defineExclusiveOption: ['unable_unwilling_to_answer', 'no_sign_of_psychological_distress'],
+              options: [
+                'feeling_sad_depressed_tired',
+                'withdrawal_isolation',
+                'anxiety',
+                'anger',
+                'fear',
+                'agitation_moodiness',
+                'careless',
+                'feeling_hopeless',
+                'no_sign_of_psychological_distress',
+                'unable_unwilling_to_answer'
+              ]
+            }),
+            k.questionWithChoicesAndOtherSpecify({
+              name: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs',
+              appearance: 'minimal',
+              multiple: true,
+              defineExclusiveOption: ['unable_unwilling_to_answer', 'no_sign_of_psychological_distress'],
+              options: [
+                'feeling_sad_depressed_tired',
+                'withdrawal_isolation',
+                'anxiety',
+                'anger',
+                'fear',
+                'agitation_moodiness',
+                'careless',
+                'feeling_hopeless',
+                'no_sign_of_psychological_distress',
+                'unable_unwilling_to_answer'
+              ]
             }),
             k.questionWithChoices({
-              name: 'when_did_the_incidents_occur',
-              choiceFilter: `tag=\${get_tag_if_is_displaced}`,
+              name: 'do_household_members_experiencing_distress_have_access_to_relevant_care_and_services',
+              appearance: 'horizontal-compact',
+              showIf: [
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'feeling_sad_depressed_tired'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'withdrawal_isolation'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'anxiety'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'anger'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'fear'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'agitation_moodiness'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'careless'},
+                {questionName: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'feeling_hopeless'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'feeling_sad_depressed_tired'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'withdrawal_isolation'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'anxiety'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'anger'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'fear'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'agitation_moodiness'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'careless'},
+                {questionName: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs', eq: 'eq', value: 'feeling_hopeless'},
+              ],
               options: [
-                {tag: 'displaced', name: 'predisplacement_or_in_the_area_of_origin'},
-                {name: 'during_the_displacement_journey'},
-                {name: 'in_displacement_location'},
+                'yes', 'no', 'unable_unwilling_to_answer',
+              ]
+            }),
+            k.questionWithChoicesAndOtherSpecify({
+              name: 'what_are_the_barriers_to_access_services',
+              showIf: {questionName: 'do_household_members_experiencing_distress_have_access_to_relevant_care_and_services', value: 'no'},
+              multiple: true,
+              options: [
+                'lack_of_available_services',
+                'lack_of_information_about_available_services',
+                'distance_lack_of_transportation_means_to_access_services',
+                'cost_associated_with_transportation_to_the_services',
+                'cost_of_the_services_provided_medication',
+                'language_barriers',
+                'requirement_for_civil_documentation',
+                'poor_quality_of_the_services_provided',
+              ]
+            }),
+            k.questionWithChoicesAndOtherSpecify({
+              name: 'what_do_you_think_feel_are_the_major_stress_factors_for_you_and_your_household_members',
+              defineExclusiveOption: 'unable_unwilling_to_answer',
+              options: [
+                'displacement_related_stress',
+                'fear_of_being_killed_or_injured_by_armed_violence',
+                'fear_of_property_being_damaged_or_destroyed_by_armed_violence',
+                'fear_of_being_sexually_assaulted',
+                'missing_family_members',
+                'lack_of_access_to_basic_services',
+                'lack_of_access_to_employment_opportunities',
+                'lack_of_access_to_specialized_medical_services',
+                'stigmatization_discrimination',
+                'worries_about_the_children',
+                'worries_about_the_future',
+                'unable_unwilling_to_answer',
               ]
             })
           ]
-        }
+        })(),
       }),
+      k.section({
+        name: 'coping_strategies',
+        showIf: showIfAccept,
+        questions: (() => {
+          return [
+            k.questionWithChoicesAndOtherSpecify({
+              name: 'what_are_the_main_sources_of_income_of_your_household',
+              defineExclusiveOption: 'unable_unwilling_to_answer',
+              multiple: true,
+              options: [
+                'employment',
+                'allowance',
+                'humanitarian_assistance',
+                'no_income',
+                'unable_unwilling_to_answer',
+              ]
+            }),
+            k.questionWithChoicesAndOtherSpecify({
+              name: 'what_type_of_allowances_do_you_receive',
+              multiple: true,
+              defineExclusiveOption: 'none',
+              options: [
+                'idp_allowance_from_the_government',
+                'pension_for_elderly_people',
+                'pension_for_disability',
+                'pension_for_three_or_more_children_in_the_household',
+                'compensation_for_the_lost_damaged_house',
+                'cash_from_humanitarians',
+                'evacuation_compensation',
+                'none',
+              ]
+            }),
+            k.questionWithChoices({
+              optional: true,
+              hint: 'leave_blank_if_none',
+              appearance: 'likert',
+              name: 'what_is_the_average_month_income_per_household',
+              options: [
+                'up_to_3000_UAH',
+                'between_3001_6000_UAH',
+                'between_6001_9000_UAH',
+                'between_9001_12000_UAH',
+                'between_12001_15000_UAH',
+                'more_than_15000_UAH',
+              ]
+            }),
+            k.questionWithChoices({
+              name: 'are_there_gaps_in_meeting_your_basic_needs',
+              options: [
+                'yes_a_lot',
+                'yes_somewhat',
+                'no',
+              ]
+            }),
+            k.questionWithChoicesAndOtherSpecify({
+              name: 'what_are_the_strategies_that_your_household_uses_to_cope_with_these_challenges',
+              defineExclusiveOption: ['no_coping_strategy', 'unable_unwilling_to_answer'],
+              options: [
+                'spending_savings',
+                'selling_off_household_productive_assets',
+                'selling_off_received_humanitarian_assistance',
+                'selling_off_housing_and_or_land',
+                'borrowing_money_',
+                'depending_on_support_from_family_external_assistance',
+                'reducing_expenses_on_food_health_and_education',
+                'begging',
+                'engaging_in_dangerous_or_exploitative_work',
+                'no_coping_strategy',
+                'unable_unwilling_to_answer',
+              ]
+            })
+          ]
+        })()
+      }),
+      k.section({
+        name: 'access_to_education',
+        showIf: showIfAccept,
+        questions: (() => {
+          return [
+            k.questionWithChoices({
+              name: 'are_schoolaged_children_in_your_household_regularly_attending_primary_or_secondary_education',
+              options: [
+                'yes_all_of_them',
+                'yes_some_of_them',
+                'no_none_of_them',
+                'no_school_aged_child_in_the_household',
+                'unable_unwilling_to_answer',
+              ]
+            }),
+            k.questionWithChoices({
+              name: 'is_it',
+              showIf: [
+                {questionName: 'are_schoolaged_children_in_your_household_regularly_attending_primary_or_secondary_education', value: 'yes_all_of_them'},
+                {questionName: 'are_schoolaged_children_in_your_household_regularly_attending_primary_or_secondary_education', value: 'yes_some_of_them'},
+              ],
+              options: [
+                'online_education',
+                'education_in_school',
+                'hybrid_mode',
+              ]
+            }),
+            k.questionWithChoicesAndOtherSpecify({
+              name: 'what_are_the_reasons_preventing_children_in_your_household_from_regularly_attending_education_services',
+              showIf: [
+                {questionName: 'are_schoolaged_children_in_your_household_regularly_attending_primary_or_secondary_education', value: 'yes_some_of_them'},
+                {questionName: 'are_schoolaged_children_in_your_household_regularly_attending_primary_or_secondary_education', value: 'no_none_of_them'},
+              ],
+              multiple: true,
+              appearance: 'minimal',
+              defineExclusiveOption: 'unable_unwilling_to_answer',
+              options: [
+                'newly_displaced',
+                'no_available_school',
+                'lack_of_internet_connectivity_to_attend_online_school',
+                'safety_risks_associated_with_access_to_presence_at_school_',
+                'distance_lack_of_transportation_means_to_access_the_service',
+                'cost_associated_with_transportation_to_school',
+                'cost_associated_with_online_education_laptop_internet',
+                'lack_of_personal_documentation',
+                'lack_of_guardianship',
+                'discrimination_restriction_of_access',
+                'lack_of_specialized_education_services_including_for_children_with_disabilities',
+                'cost_of_specialized_materials_including_for_children_with_disabilities',
+                'language_barriers',
+                'unable_unwilling_to_answer',
+              ]
+            })
+          ]
+        })()
+      }),
+      k.section({
+        name: 'housing',
+        showIf: showIfAccept,
+        questions: (() => {
+          const hasAccommodation: ShowIfCondition<I18n>[] = [{
+            questionName: 'what_is_your_current_housing_structure',
+            eq: 'neq',
+            value: 'no_shelter',
+          }]
+          return [
+            k.questionWithChoices({
+              name: 'what_is_your_current_housing_structure',
+              options: [
+                'house_apartment',
+                'room_in_private_house',
+                'collective_shelter_',
+                'privatelyowned_collective_shelter',
+                'no_shelter',
+              ]
+            }),
+            k.questionWithChoicesAndOtherSpecify({
+              name: 'what_is_the_tenure_status_of_your_accommodation',
+              options: [
+                'accommodation_with_host_family',
+                'public_building_property_no_fees',
+                'public_building_property',
+                'renting_private_accommodation',
+                'owning_private_accommodation',
+                'squatting_private_property_without_permission',
+                'living_on_the_streets',
+                'unable_unwilling_to_answer',
+              ]
+            }),
+            k.questionWithChoices({
+              name: 'do_you_have_formal_documents_to_stay_in_your_accommodation',
+              showIf: [
+                {questionName: 'what_is_the_tenure_status_of_your_accommodation', value: 'public_building_property'},
+                {questionName: 'what_is_the_tenure_status_of_your_accommodation', value: 'renting_private_accommodation'},
+              ],
+              options: [
+                'yes_i_have_a_rental_agreement',
+                'yes_i_have_state_assigned_shelter_with_proving_documents',
+                'verbal_agreement',
+                'no_formal_documents',
+                'unable_unwilling_to_answer',
+              ]
+            }),
+            k.questionWithChoices({
+              showIf: hasAccommodation,
+              name: 'what_is_the_general_condition_of_your_accommodation',
+              options: [
+                'sound_condition',
+                'partially_damaged_destroyed',
+                'severely_damaged_destroyed',
+                'unfinished',
+              ]
+            }),
+            k.questionWithChoices({
+              name: 'how_long_can_you_stay_in_your_current_accommodation',
+              showIf: hasAccommodation,
+              options: [
+                'unlimited_time',
+                'less_than_one_month',
+                '_1_3_months',
+                '_3_6_months',
+                'all_long_as_rent_is_paid',
+                'at_iminent_risk_of_eviction',
+                'unable_unwilling_to_answer',
+              ]
+            }),
+            k.questionWithChoices({
+              name: 'what_are_your_main_concerns_regarding_your_accommodation',
+              multiple: true,
+              defineExclusiveOption: ['none', 'unable_unwilling_to_answer'],
+              showIf: hasAccommodation,
+              options: [
+                'risk_of_eviction',
+                'shelter_condition',
+                'overcrowded',
+                'lack_of_privacy',
+                'lack_of_financial_resources_to_afford_rental_or_utility_costs',
+                'lack_of_wash_facilities',
+                'lack_of_heating_system',
+                'lack_gas_and_electricity',
+                'lack_of_connectivity',
+                'security_and_safety_risks_',
+                'lack_of_financial_compensation_or_rehabilitation_for_damage_or_destruction_of_housing',
+                'lack_or_loss_of_ownership_documentation',
+                'none',
+                'unable_unwilling_to_answer',
+              ]
+            })
+          ]
+        })(),
+      }),
+      k.section({
+        name: 'access_to_health',
+        showIf: showIfAccept,
+        questions: (() => {
+          return [
+            k.questionWithChoices({
+              name: 'do_you_have_access_to_health_care_in_your_current_location',
+              options: [
+                'yes',
+                'partial_access',
+                'no_access',
+                'unable_unwilling_to_answer',
+              ]
+            }),
+            k.questionWithChoicesAndOtherSpecify({
+              name: 'what_are_the_barriers_to_accessing_health_services',
+              showIf: [
+                {questionName: 'do_you_have_access_to_health_care_in_your_current_location', value: 'partial_access'},
+                {questionName: 'do_you_have_access_to_health_care_in_your_current_location', value: 'no_access'},
+              ],
+              options: [
+                'lack_of_available_health_facility',
+                'lack_of_specialized_health_care_services',
+                'safety_risks_associated_with_access_to_presence_at_health_facility',
+                'distance_lack_of_transportation_means_to_access_facilities',
+                'cost_associated_with_transportation_to_facilities',
+                'cost_of_the_services_provided_medication',
+                'requirement_for_civil_documentation',
+                'lack_shortage_of_medication',
+                'discrimination_restriction_of_access',
+                'not_accessible_for_persons_with_disabilities',
+                'long_waiting_time',
+                'language_barriers',
+                'unable_unwilling_to_answer',
+              ]
+            })
+          ]
+        })()
+      }),
+      k.section({
+        name: 'sec_priority_needs',
+        showIf: showIfAccept,
+        questions: (() => {
+          return [
+            common.priorityNeeds({name: 'what_is_your_1_priority'}),
+            common.priorityNeeds({name: 'what_is_your_2_priority'}),
+            common.priorityNeeds({name: 'what_is_your_3_priority'}),
+            k.title({name: 'thanks'}),
+          ]
+        })()
+      }),
+      k.section({
+        name: 'sec_additional_information',
+        showIf: showIfAccept,
+        questions: (() => {
+          return [
+            k.question({type: 'TEXTAREA', name: 'additional_information_shared_by_respondent', optional: true}),
+            k.question({type: 'TEXTAREA', name: 'comments_observations_of_the_protection_monitor', optional: true}),
+          ]
+        })()
+      }),
+      k.section({
+        name: 'sec_followup',
+        showIf: showIfAccept,
+        questions: [
+          k.questionWithChoices({
+            name: 'need_for_assistance',
+            options: ['yes', 'no']
+          })
+        ]
+      })
     ]
   }
 }

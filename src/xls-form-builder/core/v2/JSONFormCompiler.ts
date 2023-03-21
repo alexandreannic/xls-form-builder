@@ -13,6 +13,7 @@ export interface JSONChoices<L extends I18n, Locale extends string> {
   name: keyof L
   label: Translations<Locale>
   tag?: string
+  tag1?: string
 }
 
 export type KoboTheme = 'theme-grid no-text-transform'
@@ -57,7 +58,6 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
   private collectedOptions: {[key: string]: Choice<T>[]} = {}
   private titlesIndex = 0
   private subTitlesIndex = 1
-  private namesIndex = new Map<string, number>()
   private enumerationNamesIndex = new Map<string, string>()
   private childEnumerationNamesIndex = new Map<string, number>()
 
@@ -68,12 +68,24 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
   }) {
   }
 
+  private readonly checkDuplicateQuestionName = (qs: Question2<T>[]): void => {
+    const names = new Set<string>()
+    qs.forEach(_ => {
+      const qName = _.name as string
+      if (names.has(qName)) {
+        throw new Error(`All question names must be uniq. Question name '${qName}' is not uniq.`)
+      }
+      names.add(qName)
+    })
+  }
+
   readonly buildForm = (): JSONForm<T, Locale> => {
+    this.checkDuplicateQuestionName(this.props.form.sections.flatMap(_ => _.questions.flat()))
     const form = {
       version: this.props.form.version,
       title: this.props.form.title,
     }
-    const questions = this.props.form.sections().flatMap(s => {
+    const questions = this.props.form.sections.flatMap(s => {
       this.subTitlesIndex = 1
       this.titlesIndex++
       return [
@@ -95,8 +107,8 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
     return {meta: form, questions, options}
   }
 
-  private readonly buildQuestions = (questions: () => (Question2<T> | Question2<T>[])[]): JSONQuestion<T, Locale>[] => {
-    return questions().flat()
+  private readonly buildQuestions = (questions: (Question2<T> | Question2<T>[])[]): JSONQuestion<T, Locale>[] => {
+    return questions.flat()
       .map(q => {
         if (q.options) {
           const id = Utils.makeid()
@@ -106,22 +118,21 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
         return q
       })
       .map(this.addTranslations)
-      .map(this.generateUniqQuestioName)
+      // .map(this.generateUniqQuestionName)
       .map(this.props.numberOnTitles ? this.applyQuestionNumeration : _ => _)
       .map(this.applyLabelFontStyle)
       // .map(this.applyHintStyle)
       .map(this.mapQuestionToXLSForm)
   }
-
-  private readonly applyHintStyle = (q: QuestionWithI18n<T, Locale>): QuestionWithI18n<T, Locale> => {
-    return {
-      ...q,
-      hint: q.hint?.map(_ => ({..._, text: `<span style="font-style: normal">${_.text}</span>`})),
-      guidanceHint: q.guidanceHint?.map(_ => ({..._, text: `<span style="font-style: normal">${_.text}</span>`})),
-    }
-  }
-
+  
   private readonly applyQuestionNumeration = (q: QuestionWithI18n<T, Locale>): QuestionWithI18n<T, Locale> => {
+    const ignoredType: QuestionType[] = [
+      'CALCULATE',
+      'DIVIDER'
+    ]
+    if (ignoredType.includes(q.type)) {
+      return q
+    }
     const qName = q.name as string
     const subTitles = this.subTitlesIndex
     const numeration = (() => {
@@ -143,7 +154,7 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
   private readonly addTranslations = (q: Question2<T>): QuestionWithI18n<T, Locale> => {
     return {
       ...q,
-      label: this.translate(q.name),
+      label: this.translate(q.label),
       // guidanceHint: q.guidanceHint ? this.translate(q.guidanceHint) : undefined,
       hint: q.hint ? this.translate(q.hint) : undefined,
       constraintMessage: q.constraintMessage ? this.translate(q.constraintMessage) : undefined,
@@ -156,12 +167,12 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
     })
   }
 
-  private generateUniqQuestioName = (q: QuestionWithI18n<T, Locale>): QuestionWithI18n<T, Locale> => {
-    const name = q.name as string
-    const index = this.namesIndex.get(name)
-    this.namesIndex.set(name, (index ?? 0) + 1)
-    return {...q, name: name + (index ?? '')}
-  }
+  // private generateUniqQuestionName = (q: QuestionWithI18n<T, Locale>): QuestionWithI18n<T, Locale> => {
+  //   const name = q.name as string
+  //   const index = this.namesIndex.get(name)
+  //   this.namesIndex.set(name, (index ?? 0) + 1)
+  //   return {...q, name: name + (index ?? '')}
+  // }
 
   private readonly mapQuestionToXLSForm = (q: QuestionWithI18n<T, Locale>): JSONQuestion<T, Locale> => {
     return {
@@ -171,7 +182,7 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
       required: !q.optional,
       type: this.mapQuestionTypeToXLSForm(q.type) + (q.optionsId ? ' ' + q.optionsId : ' '),
       relevant: this.mapRelevant(q),
-      appearance: q.type === 'TEXTAREA' ? 'multiline' : undefined,
+      appearance: q.type === 'TEXTAREA' ? 'multiline' : q.appearance,
       hint: q.hint,
       guidance_hint: q.guidanceHint,
       constraint_message: q.constraintMessage,
@@ -209,10 +220,10 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
   private readonly mapXLSFormChoices = (options: {[key: string]: Choice<T>[]}): JSONChoices<T, Locale>[] => {
     return Object.entries(options).flatMap(([key, options]) => {
       return options.map(option => ({
+        ...option,
         list_name: key,
         name: option.name,
         label: this.translate(option.name),
-        tag: option.tag,
       }))
     })
   }
@@ -241,7 +252,7 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
   }
 
   private readonly findQuestionByName = (name: keyof T): Question2<T> => {
-    const res = this.props.form.sections().flatMap(_ => _.questions().flat()).find(_ => _.name === name)
+    const res = this.props.form.sections.flatMap(_ => _.questions.flat()).find(_ => _.name === name)
     if (!res) {
       throw Error(`Cannot find question with name ${String(name)}`)
     }

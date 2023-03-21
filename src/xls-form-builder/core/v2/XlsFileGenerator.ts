@@ -45,7 +45,6 @@ export class XlsFileGenerator<T extends I18n, Locale extends string> {
           {column: 'appearance', type: String, value: (_: JSONQuestion<T, Locale>) => _.appearance ?? ''},
           {column: 'default', type: String, value: (_: JSONQuestion<T, Locale>) => _.default ?? ''},
           {column: 'constraint', type: String, value: (_: JSONQuestion<T, Locale>) => _.constraint ?? ''},
-          {column: 'constraint_message', type: String, value: (_: JSONQuestion<T, Locale>) => _.constraint_message ?? ''},
           ...this.addColumnWithLocales('hint'),
           ...this.addColumnWithLocales('constraint_message'),
         ],
@@ -53,6 +52,7 @@ export class XlsFileGenerator<T extends I18n, Locale extends string> {
           {column: 'list_name', type: String, value: (_: JSONChoices<T, Locale>) => _.list_name},
           {column: 'name', type: String, value: (_: JSONChoices<T, Locale>) => _.name},
           {column: 'tag', type: String, value: (_: JSONChoices<T, Locale>) => _.tag ?? ''},
+          {column: 'tag1', type: String, value: (_: JSONChoices<T, Locale>) => _.tag1 ?? ''},
           ...this.getLocales().map(locale => ({
             column: `label::${locale} (${locale})`,
             type: String,

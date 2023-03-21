@@ -5,9 +5,11 @@ import {formIntake} from './xls-form-builder/examples/2022.pui/FormIntake'
 import {formBIA} from './xls-form-builder/examples/2022.pui/FormBIA'
 import {formFCRM} from './xls-form-builder/examples/2022.pui/FormFCRM'
 import {protHH} from './xls-form-builder/examples/2023.drc/ProtHH'
+import {test} from './xls-form-builder/examples/2023.drc/Test'
 
 (async () => {
   console.log('Start...')
+  test()
   protHH()
   // formBIA()
   // formReferral()

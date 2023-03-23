@@ -28,7 +28,8 @@ export const protHH = async () => {
     })
 
     const common = new Common(k)
-    const hasMinorInHH = common.hasMinorInHH()
+    const showIfHaveMinorInHH = common.showIfHaveMinorInHH()
+    // const showIfHaveNoMinorInHH = common.haveNoMinorInHH()
     const hasAccepted: ShowIf<I18n> = {
       showIfType: 'and',
       showIf: [{
@@ -52,25 +53,21 @@ export const protHH = async () => {
             k.questionWithChoices({
               name: 'present_yourself',
               hint: 'hello_my_name_is',
-              options: [
-                'yes', 'no',
-              ]
+              appearance: 'horizontal-compact',
+              options: ['yes', 'no',]
             }),
-            k.label({
+            k.alertWarn({
               showIf: {questionName: 'present_yourself', value: 'no'},
               name: 'thanks_the_respondant',
-              color: 'red',
             }),
             k.questionWithChoices({
               showIf: {questionName: 'present_yourself', value: 'yes'},
+              appearance: 'horizontal-compact',
               name: 'have_you_filled_out_this_form_before',
-              options: [
-                'yes', 'no',
-              ]
+              options: ['yes', 'no',]
             }),
-            k.label({
+            k.alertWarn({
               name: 'have_you_filled_out_this_form_before_yes',
-              color: 'red',
               showIf: {questionName: 'have_you_filled_out_this_form_before', value: 'yes'},
             })
           ]
@@ -90,6 +87,11 @@ export const protHH = async () => {
               options: [
                 'yes', 'no', 'unable_unwilling_to_answer',
               ],
+            }),
+            k.questionWithChoices({
+              name: 'what_is_the_sex_of_the_head_of_household',
+              showIf: {questionName: 'is_your_hh_single_header', value: 'yes'},
+              options: common.sex,
             }),
             k.questionWithChoicesAndOtherSpecify({
               name: 'do_any_of_these_specific_needs_categories_apply_to_the_head_of_this_household',
@@ -134,8 +136,8 @@ export const protHH = async () => {
                 'belorussian',
                 'azerbaijan',
                 'russian',
-                'unable_unwilling_to_answer',
                 'no',
+                'unable_unwilling_to_answer',
               ],
             }),
             k.questionWithChoicesAndSpecify({
@@ -152,17 +154,10 @@ export const protHH = async () => {
               constraint: '. > 0',
             }),
             common.hhComposition(),
-            k.questionWithChoicesAndSpecify({
-              name: 'are_you_separated_from_any_of_your_households_members',
-              options: [
-                'yes', 'no', 'unable_unwilling_to_answer',
-              ]
-            }),
             k.questionWithChoices({
               multiple: true,
-              showIf: {questionName: 'are_you_separated_from_any_of_your_households_members', value: 'yes'},
-              defineExclusiveOption: 'unable_unwilling_to_answer',
-              name: 'who_are_you_separated_from',
+              defineExclusiveOption: ['no', 'unable_unwilling_to_answer'],
+              name: 'are_you_separated_from_any_of_your_households_members',
               options: [
                 'partner',
                 'child_lt_18',
@@ -170,20 +165,21 @@ export const protHH = async () => {
                 'mother',
                 'father',
                 'other_relative',
-                'unable_unwilling_to_answer'
+                'no',
+                'unable_unwilling_to_answer',
               ]
             }),
-            common.whereIsSeparatedMember('where_is_your_partner', {questionName: 'who_are_you_separated_from', value: 'partner'}),
+            common.whereIsSeparatedMember('where_is_your_partner', {questionName: 'are_you_separated_from_any_of_your_households_members', value: 'partner'}),
             common.whyRemainBehind({name: 'where_is_your_partner_remain_behind_in_the_area_of_origin', ref: 'where_is_your_partner'}),
-            common.whereIsSeparatedMember('where_is_your_child_lt_18', {questionName: 'who_are_you_separated_from', value: 'child_lt_18'}),
+            common.whereIsSeparatedMember('where_is_your_child_lt_18', {questionName: 'are_you_separated_from_any_of_your_households_members', value: 'child_lt_18'}),
             common.whyRemainBehind({name: 'where_is_your_child_lt_18_remain_behind_in_the_area_of_origin', ref: 'where_is_your_child_lt_18'}),
-            common.whereIsSeparatedMember('where_is_your_child_gte_18', {questionName: 'who_are_you_separated_from', value: 'child_gte_18'}),
+            common.whereIsSeparatedMember('where_is_your_child_gte_18', {questionName: 'are_you_separated_from_any_of_your_households_members', value: 'child_gte_18'}),
             common.whyRemainBehind({name: 'where_is_your_child_gte_18_remain_behind_in_the_area_of_origin', ref: 'where_is_your_child_gte_18'}),
-            common.whereIsSeparatedMember('where_is_your_mother', {questionName: 'who_are_you_separated_from', value: 'mother'}),
+            common.whereIsSeparatedMember('where_is_your_mother', {questionName: 'are_you_separated_from_any_of_your_households_members', value: 'mother'}),
             common.whyRemainBehind({name: 'where_is_your_mother_remain_behind_in_the_area_of_origin', ref: 'where_is_your_mother'}),
-            common.whereIsSeparatedMember('where_is_your_father', {questionName: 'who_are_you_separated_from', value: 'father'}),
+            common.whereIsSeparatedMember('where_is_your_father', {questionName: 'are_you_separated_from_any_of_your_households_members', value: 'father'}),
             common.whyRemainBehind({name: 'where_is_your_father_remain_behind_in_the_area_of_origin', ref: 'where_is_your_father'}),
-            common.whereIsSeparatedMember('where_is_your_other_relative', {questionName: 'who_are_you_separated_from', value: 'other_relative'}),
+            common.whereIsSeparatedMember('where_is_your_other_relative', {questionName: 'are_you_separated_from_any_of_your_households_members', value: 'other_relative'}),
             common.whyRemainBehind({name: 'where_is_your_other_relative_remain_behind_in_the_area_of_origin', ref: 'where_is_your_other_relative'}),
           ]
         })()
@@ -215,8 +211,8 @@ export const protHH = async () => {
                 'wg_remembering_or_concentrating',
                 'wg_selfcare_such_as_washing_all_over_or_dressing',
                 'wg_using_your_usual_language_have_difficulty_communicating_',
+                'no',
                 'unable_unwilling_to_answer',
-                'no'
               ],
             }),
             k.question({
@@ -226,15 +222,10 @@ export const protHH = async () => {
               constraintMessage: 'should_be_lt_total_individuals',
               ...hasWgqLimitations,
             }),
-            k.questionWithChoices({
-              name: 'do_you_or_anyone_in_your_household_have_a_disability_status_from_the_gov',
-              options: ['yes', 'no'],
-              appearance: 'horizontal-compact',
-              ...hasWgqLimitations,
-            }),
             k.questionWithChoicesAndOtherSpecify({
-              showIf: {questionName: 'do_you_or_anyone_in_your_household_have_a_disability_status_from_the_gov', value: 'no'},
-              name: 'why_dont_have_status',
+              ...hasWgqLimitations,
+              name: 'do_you_or_anyone_in_your_household_have_a_disability_status_from_the_gov',
+              defineExclusiveOption: ['no', 'unable_unwilling_to_answer'],
               options: [
                 'status_registration_rejected_not_meeting_the_criteria_as_per_ukrainian_procedure',
                 'status_renewal_rejected',
@@ -244,16 +235,18 @@ export const protHH = async () => {
                 'inability_to_access_registration_safety_risks',
                 'unwilling_to_register',
                 'unaware_ofnot_familiar_with_the_procedure',
+                'no', 
+                'unable_unwilling_to_answer'
               ]
             }),
             k.questionWithChoices({
               name: 'do_you_or_anyone_in_your_household_receive_state_allowance_for_disability',
-              ...hasWgqLimitations,
-              options: [
-                'yes',
-                'no',
-                'unable_unwilling_to_answer',
-              ]
+              showIf: {
+                questionName: 'do_you_or_anyone_in_your_household_have_a_disability_status_from_the_gov',
+                value: 'yes',
+              },
+              options: ['yes', 'no', 'unable_unwilling_to_answer',],
+              appearance: 'horizontal-compact',
             }),
             k.questionWithChoices({
               name: 'does_the_household_host_children_who_are_relatives',
@@ -308,7 +301,9 @@ export const protHH = async () => {
             k.question({
               showIf: {questionName: 'do_you_identify_as_any_of_the_following', value: 'idp'},
               name: 'when_did_you_leave_your_area_of_origin',
+              hint: 'insert_approximate',
               type: 'DATE',
+              appearance: 'month-year',
               constraint: '. < today()',
               constraintMessage: 'date_should_be_past',
             }),
@@ -317,10 +312,20 @@ export const protHH = async () => {
               multiple: true,
               name: 'how_did_you_travel_to_your_displacement_location',
               options: [
-                'volunteer_and_or_ukrainian_ngo_supported_evacuation',
-                'un_icrc_ingo_supported_evacuation',
-                'private_vehicle_train_bus',
-                'government_evacuation_train_bus',
+                'volunteer_and_or_Ukrainian_NGO_supported_return',
+                'uN_INGO_supported_return',
+                'government_supported_return',
+                'host_communitys_local_authorities_supported_return',
+                'own_means',
+              ]
+            }),
+            k.questionWithChoices({
+              showIf: {questionName: 'do_you_identify_as_any_of_the_following', value: 'idp'},
+              name: 'have_you_received_any_form_of_compensation_for_leaving_your_area_of_origin',
+              appearance: 'horizontal-compact',
+              options: [
+                'yes',
+                'no',
               ]
             }),
             k.questionWithChoicesAndOtherSpecify({
@@ -344,14 +349,6 @@ export const protHH = async () => {
             }),
             k.questionWithChoices({
               showIf: {questionName: 'do_you_identify_as_any_of_the_following', value: 'idp'},
-              name: 'have_you_received_any_form_of_compensation_for_leaving_your_area_of_origin',
-              options: [
-                'yes',
-                'no',
-              ]
-            }),
-            k.questionWithChoices({
-              showIf: {questionName: 'do_you_identify_as_any_of_the_following', value: 'idp'},
               name: 'have_you_been_displaced_prior_to_your_current_displacement',
               options: [
                 'yes_after_2014',
@@ -360,15 +357,19 @@ export const protHH = async () => {
                 'unable_unwilling_to_answer',
               ]
             }),
+            k.calculate({
+              name: 'get_tag_if_is_returnee',
+              calculation: `if(\${do_you_identify_as_any_of_the_following}='returnee', 'returnee', 'all') `,
+            }),
             k.questionWithChoices({
-              showIf: {questionName: 'do_you_identify_as_any_of_the_following', value: 'idp'},
               name: 'what_are_your_households_intentions_in_terms_of_place_of_residence_in_the_next_3_months',
+              choiceFilter: `tag=\${get_tag_if_is_returnee} or tag1=\${get_tag_if_is_returnee}`,
               options: [
-                'return_to_the_area_of_origin',
-                'relocate_to_another_area_in_ukraine',
-                'relocate_to_a_country_outside_of_ukraine',
-                'integrate_into_the_local_community_of_current_place_of_residence',
-                'unable_unwilling_to_answer',
+                {name: 'return_to_the_area_of_origin', tag: 'all'},
+                {name: 'relocate_to_another_area_in_ukraine', tag: 'all', tag1: 'returnee'},
+                {name: 'relocate_to_a_country_outside_of_ukraine', tag: 'all', tag1: 'returnee'},
+                {name: 'integrate_into_the_local_community_of_current_place_of_residence', tag: 'all', tag1: 'returnee'},
+                {name: 'unable_unwilling_to_answer', tag: 'all', tag1: 'returnee'},
               ]
             }),
             k.questionWithChoices({
@@ -411,14 +412,19 @@ export const protHH = async () => {
             }),
             k.question({
               type: 'DATE',
+              appearance: 'month-year',
+              hint: 'insert_approximate',
+              showIf: {questionName: 'do_you_identify_as_any_of_the_following', value: 'returnee'},
               name: 'when_did_you_first_leave_your_area_of_origin',
               constraint: '. < today()',
               constraintMessage: 'date_should_be_past',
             }),
             k.question({
               showIf: {questionName: 'do_you_identify_as_any_of_the_following', value: 'returnee'},
+              hint: 'insert_approximate',
               name: 'when_did_you_return_to_your_area_of_origin',
               type: 'DATE',
+              appearance: 'month-year',
               constraint: '. < today()',
               constraintMessage: 'date_should_be_past',
             }),
@@ -439,6 +445,8 @@ export const protHH = async () => {
             k.questionWithChoicesAndOtherSpecify({
               multiple: true,
               name: 'why_did_you_decide_to_return_to_your_area_of_origin',
+              showIf: {questionName: 'do_you_identify_as_any_of_the_following', value: 'returnee'},
+              defineExclusiveOption: 'unable_unwilling_to_answer',
               options: [
                 'improved_security_in_area_of_origin',
                 'insecurity_conflict_in_area_of_displacement',
@@ -482,7 +490,7 @@ export const protHH = async () => {
             }),
             k.questionWithChoices({
               showIf: {questionName: 'do_you_identify_as_any_of_the_following', value: 'idp'},
-              name: 'as_idp_are_you_and_your_hh_members_registered_as_idps',
+              name: 'are_you_and_your_hh_members_registered_as_idps',
               options: [
                 'yes_all_of_them',
                 'yes_some_of_them',
@@ -492,8 +500,8 @@ export const protHH = async () => {
             k.questionWithChoices({
               name: 'do_you_have_any_of_the_following',
               showIf: [
-                {questionName: 'as_idp_are_you_and_your_hh_members_registered_as_idps', value: 'yes_all_of_them'},
-                {questionName: 'as_idp_are_you_and_your_hh_members_registered_as_idps', value: 'yes_some_of_them'},
+                {questionName: 'are_you_and_your_hh_members_registered_as_idps', value: 'yes_all_of_them'},
+                {questionName: 'are_you_and_your_hh_members_registered_as_idps', value: 'yes_some_of_them'},
               ],
               showIfType: 'or',
               multiple: true,
@@ -505,14 +513,13 @@ export const protHH = async () => {
             }),
             k.questionWithChoices({
               name: 'do_you_and_your_hh_members_receive_the_idp_allowance',
+              appearance: 'horizontal-compact',
               showIf: [
-                {questionName: 'as_idp_are_you_and_your_hh_members_registered_as_idps', value: 'yes_all_of_them'},
-                {questionName: 'as_idp_are_you_and_your_hh_members_registered_as_idps', value: 'yes_some_of_them'},
+                {questionName: 'are_you_and_your_hh_members_registered_as_idps', value: 'yes_all_of_them'},
+                {questionName: 'are_you_and_your_hh_members_registered_as_idps', value: 'yes_some_of_them'},
               ],
               showIfType: 'or',
-              options: [
-                'yes', 'no',
-              ]
+              options: ['yes', 'no', 'unable_unwilling_to_answer']
             }),
             k.questionWithChoicesAndOtherSpecify({
               showIf: {questionName: 'do_you_and_your_hh_members_receive_the_idp_allowance', value: 'no'},
@@ -525,8 +532,8 @@ export const protHH = async () => {
             k.questionWithChoicesAndOtherSpecify({
               name: 'why_are_you_not_registered',
               showIf: [
-                {questionName: 'do_you_identify_as_any_of_the_following', value: 'idp'},
-                {questionName: 'what_is_your_citizenship', value: 'stateless'},
+                {questionName: 'are_you_and_your_hh_members_registered_as_idps', value: 'no'},
+                {questionName: 'are_you_and_your_hh_members_registered_as_idps', value: 'yes_some_of_them'},
               ],
               showIfType: 'or',
               options: [
@@ -554,9 +561,10 @@ export const protHH = async () => {
               ]
             }),
             k.questionWithChoices({
+              showIf: {questionName: 'what_is_your_citizenship', op: '=', value: 'ukrainian'},
               name: 'are_all_members_of_your_household_in_possession_of_personal_documentation_including_tin',
               appearance: 'horizontal-compact',
-              options: ['yes', 'no']
+              options: ['yes', 'no', 'unable_unwilling_to_answer']
             }),
             k.question({
               type: 'INTEGER',
@@ -585,17 +593,10 @@ export const protHH = async () => {
                 'unable_unwilling_to_answer',
               ]
             }),
-            k.questionWithChoices({
-              name: 'have_you_experienced_any_barriers_in_obtaining_or_accessing_identity_documentation_and_or_hlp_documentation',
-              appearance: 'horizontal-compact',
-              options: [
-                'yes', 'no', 'unable_unwilling_to_answer',
-              ]
-            }),
             k.questionWithChoicesAndOtherSpecify({
               multiple: true,
-              showIf: {questionName: 'have_you_experienced_any_barriers_in_obtaining_or_accessing_identity_documentation_and_or_hlp_documentation', value: 'yes'},
-              name: 'what_are_the_barriers_for_obtaining_personal_documents',
+              defineExclusiveOption: ['no', 'unable_unwilling_to_answer',],
+              name: 'have_you_experienced_any_barriers_in_obtaining_or_accessing_identity_documentation_and_or_hlp_documentation',
               options: [
                 'length_of_administrative_procedures',
                 'cost_of_administrative_procedures',
@@ -606,6 +607,8 @@ export const protHH = async () => {
                 'inability_of_the_service_to_provide_required_documentation',
                 'discrimination',
                 'distrust_of_public_institutions_and_authorities',
+                'no', 
+                'unable_unwilling_to_answer',
               ]
             })
           ]
@@ -642,9 +645,10 @@ export const protHH = async () => {
             }),
             k.questionWithChoices({
               name: 'is_this_area_contaminated',
+              hint: 'is_this_area_contaminated_hint',
               appearance: 'horizontal-compact',
               options: [
-                'yes', 'no',
+                'yes', 'no', 'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoices({
@@ -652,10 +656,21 @@ export const protHH = async () => {
               appearance: 'horizontal-compact',
               showIf: {questionName: 'is_this_area_contaminated', value: 'yes'},
               options: [
-                'yes', 'no',
+                'yes', 'no', 'unable_unwilling_to_answer',
               ]
             }),
-            common.rating({name: 'how_would_you_describe_the_relationship_between_member_of_the_host_community'}),
+            k.questionWithChoices({
+              name: 'how_would_you_describe_the_relationship_between_member_of_the_host_community',
+              hint: 'leave_blank_if_none',
+              optional: true,
+              appearance: 'likert',
+              options: [
+                '_1_very_unsafe',
+                '_2_unsafe',
+                '_4_safe',
+                '_5_very_safe',
+              ],
+            }),
             k.questionWithChoicesAndOtherSpecify({
               name: 'what_factors_are_affecting_the_relationship_between_communities_in_this_location',
               showIf: [
@@ -690,14 +705,9 @@ export const protHH = async () => {
                 'no_incident_experienced',
               ]
             }),
-            k.questionWithChoices({
-              appearance: 'horizontal-compact',
-              name: 'do_you_or_your_household_members_experience_any_barriers_to_movements_in_and_around_the_area',
-              options: ['yes', 'no', 'unable_unwilling_to_answer'],
-            }),
             k.questionWithChoicesAndOtherSpecify({
-              name: 'what_are_the_barriers_to_movement',
-              showIf: {questionName: 'do_you_or_your_household_members_experience_any_barriers_to_movements_in_and_around_the_area', value: 'yes'},
+              name: 'do_you_or_your_household_members_experience_any_barriers_to_movements_in_and_around_the_area',
+              defineExclusiveOption: ['no', 'unable_unwilling_to_answer'],
               options: [
                 'fear_of_conscription_including_selfrestriction_of_movement',
                 'unable_to_leave_the_country_due_to_government_restrictions_related_to_conscription',
@@ -709,6 +719,7 @@ export const protHH = async () => {
                 'intercommunity_tensions',
                 'lack_of_transportationfinancial_resources_to_pay_transportation',
                 'reduced_mobility_linked_with_health_issues_or_disability',
+                'no', 'unable_unwilling_to_answer'
               ]
             })
           ]
@@ -721,20 +732,30 @@ export const protHH = async () => {
           return [
             k.calculate({
               name: 'get_tag_if_is_displaced',
-              calculation: `if(\${do_you_identify_as_any_of_the_following}='idp', 'displaced', 'all') `,
+              calculation: `if(\${do_you_identify_as_any_of_the_following}='idp' or \${do_you_identify_as_any_of_the_following}='returnee', 'all', 'nondisplaced') `,
             }),
-            common.incidentsForm('has_any_adult_male_member_of_your_household_experienced_any_form_of_violence_within_the_last_6_months'),
-            k.divider(),
-            common.incidentsForm('has_any_adult_female_member_of_your_household_experienced_any_protectionright_violation_incident'),
-            k.divider(),
-            common.incidentsForm('has_any_boy_member_of_your_household_experienced_any_protectionright_violation_incident'),
-            k.divider(),
-            common.incidentsForm('has_any_girl_member_of_your_household_experienced_any_protectionright_violation_incident'),
-            k.divider(),
-            common.incidentsForm('has_any_member_of_your_household_experienced_any_protectionright_violation_incident'),
-            k.divider(),
+            common.incidentsForm({
+              name: 'has_any_adult_male_member_of_your_household_experienced_any_form_of_violence_within_the_last_6_months',
+              ...common.showIfHaveAdultInHH('male'),
+            }),
+            common.incidentsForm({
+              name: 'has_any_adult_female_member_of_your_household_experienced_any_protectionright_violation_incident',
+              ...common.showIfHaveAdultInHH('female'),
+            }),
+            common.incidentsForm({
+              name: 'has_any_boy_member_of_your_household_experienced_any_protectionright_violation_incident',
+              ...common.showIfHaveChildInHH('male'),
+            }),
+            common.incidentsForm({
+              name: 'has_any_girl_member_of_your_household_experienced_any_protectionright_violation_incident',
+              ...common.showIfHaveChildInHH('female'),
+            }),
+            common.incidentsForm({
+              name: 'has_any_member_of_your_household_experienced_any_protectionright_violation_incident',
+            }),
             k.questionWithChoices({
               name: 'do_you_or_members_of_your_household_experience_discrimination_or_stigmatization_in_your_current_area_of_residence',
+              appearance: 'horizontal-compact',
               options: [
                 'yes', 'no', 'unable_unwilling_to_answer',
               ]
@@ -875,6 +896,7 @@ export const protHH = async () => {
             k.questionWithChoicesAndOtherSpecify({
               name: 'what_type_of_allowances_do_you_receive',
               multiple: true,
+              showIf: {questionName: 'what_are_the_main_sources_of_income_of_your_household', value: 'allowance'},
               defineExclusiveOption: 'none',
               options: [
                 'idp_allowance_from_the_government',
@@ -903,6 +925,8 @@ export const protHH = async () => {
             }),
             k.questionWithChoices({
               name: 'are_there_gaps_in_meeting_your_basic_needs',
+              hint: 'are_there_gaps_in_meeting_your_basic_needs_hint',
+              appearance: 'horizontal-compact',
               options: [
                 'yes_a_lot',
                 'yes_somewhat',
@@ -911,6 +935,10 @@ export const protHH = async () => {
             }),
             k.questionWithChoicesAndOtherSpecify({
               name: 'what_are_the_strategies_that_your_household_uses_to_cope_with_these_challenges',
+              showIf: [
+                {questionName: 'are_there_gaps_in_meeting_your_basic_needs', value: 'yes_a_lot'},
+                {questionName: 'are_there_gaps_in_meeting_your_basic_needs', value: 'yes_somewhat'},
+              ],
               defineExclusiveOption: ['no_coping_strategy', 'unable_unwilling_to_answer'],
               options: [
                 'spending_savings',
@@ -929,10 +957,20 @@ export const protHH = async () => {
           ]
         })()
       }),
+      // k.section({
+      //   name: 'access_to_education',
+      //   showIfType: 'and',
+      //   showIf: [showIfHaveNoMinorInHH, hasAccepted],
+      //   questions: [
+      //     k.alertInfo({
+      //       name: 'you_indicate_no_children_in_hh',
+      //     })
+      //   ]
+      // }),
       k.section({
         name: 'access_to_education',
         showIfType: 'and',
-        showIf: [hasAccepted, hasMinorInHH],
+        showIf: [showIfHaveMinorInHH, hasAccepted],
         questions: (() => {
           return [
             k.questionWithChoices({
@@ -947,6 +985,7 @@ export const protHH = async () => {
             }),
             k.questionWithChoices({
               name: 'is_it',
+              showIfType: 'or',
               showIf: [
                 {questionName: 'are_schoolaged_children_in_your_household_regularly_attending_primary_or_secondary_education', value: 'yes_all_of_them'},
                 {questionName: 'are_schoolaged_children_in_your_household_regularly_attending_primary_or_secondary_education', value: 'yes_some_of_them'},
@@ -959,6 +998,7 @@ export const protHH = async () => {
             }),
             k.questionWithChoicesAndOtherSpecify({
               name: 'what_are_the_reasons_preventing_children_in_your_household_from_regularly_attending_education_services',
+              showIfType: 'or',
               showIf: [
                 {questionName: 'are_schoolaged_children_in_your_household_regularly_attending_primary_or_secondary_education', value: 'yes_some_of_them'},
                 {questionName: 'are_schoolaged_children_in_your_household_regularly_attending_primary_or_secondary_education', value: 'no_none_of_them'},
@@ -1008,6 +1048,7 @@ export const protHH = async () => {
             }),
             k.questionWithChoicesAndOtherSpecify({
               name: 'what_is_the_tenure_status_of_your_accommodation',
+              ...hasAccommodation,
               options: [
                 'accommodation_with_host_family',
                 'public_building_property_no_fees',

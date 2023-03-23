@@ -12,7 +12,29 @@ export class Common {
 
   static readonly maxHHComposition = 9
 
-  readonly hasMinorInHH = (): ShowIf<I18n> => {
+  readonly showIfHaveAdultInHH = (sex: 'male' | 'female'): ShowIf<I18n> => {
+    const showIf: ShowIf<I18n>[] = mapFor(Common.maxHHComposition, i => ({
+      showIfType: 'and',
+      showIf: [
+        {questionName: 'hh_sex_' + (i + 1), op: '=', value: sex},
+        {questionName: 'hh_age_' + (i + 1), op: '>=', value: 18}
+      ]
+    }))
+    return {showIfType: 'or', showIf}
+  }
+
+  readonly showIfHaveChildInHH = (sex: 'male' | 'female'): ShowIf<I18n> => {
+    const showIf: ShowIf<I18n>[] = mapFor(Common.maxHHComposition, i => ({
+      showIfType: 'and',
+      showIf: [
+        {questionName: 'hh_sex_' + (i + 1), op: '=', value: sex},
+        {questionName: 'hh_age_' + (i + 1), op: '<', value: 18}
+      ]
+    }))
+    return {showIfType: 'or', showIf}
+  }
+
+  readonly showIfHaveMinorInHH = (): ShowIf<I18n> => {
     return {
       showIfType: 'or',
       showIf: mapFor(Common.maxHHComposition, i => {
@@ -21,6 +43,37 @@ export class Common {
           op: '<',
           value: 18
         }
+      }) as ShowIfCondition<I18n>[]
+    }
+  }
+
+  readonly sex: (keyof I18n)[] = [
+    'male',
+    'female',
+    'other',
+    'unable_unwilling_to_answer',
+  ]
+
+  readonly haveNoMinorInHH = (): ShowIf<I18n> => {
+    return {
+      showIfType: 'and',
+      showIf: mapFor(Common.maxHHComposition, i => {
+        const t: ShowIf<I18n> = {
+          showIfType: 'or',
+          showIf: [
+            {
+              questionName: 'hh_age_' + (i + 1),
+              op: '>=',
+              value: 18
+            },
+            {
+              questionName: `hh_age_${i + 1}`,
+              op: '=',
+              value: '""'
+            },
+          ]
+        }
+        return t
       })
     }
   }
@@ -35,17 +88,12 @@ export class Common {
           showIf: {questionName: 'how_many_individuals_including_the_respondent_are_in_the_household', op: '>=', value: i + 1 as any},
           appearance: 'horizontal-compact',
           borderTop: true,
-          options: [
-            'male',
-            'female',
-            'other',
-            'unable_unwilling_to_answer',
-          ]
+          options: this.sex
         }),
         this.k.question({
           type: 'INTEGER',
           name: 'hh_age_' + (i + 1),
-          constraint: '. > 0 and . < 150',
+          constraint: '. >= 0 and . < 150',
           showIf: {questionName: 'how_many_individuals_including_the_respondent_are_in_the_household', op: '>=', value: i + 1 as any},
           size: 'small',
           bold: false,
@@ -64,6 +112,7 @@ export class Common {
     return [
       this.k.label({
         name: getName('label'),
+        hint: 'its_an_autocomplete',
         label,
         ...props
       }),
@@ -91,6 +140,7 @@ export class Common {
         label: 'hromada',
         appearance: 'minimal autocomplete',
         bold: false,
+        moveOptionsToExternalFile: 'hromada',
         name: getName('hromada'),
         choiceFilter: `tag=\${${getName('raion')}} or tag1=\${${getName('oblast')}}`,
         options: Enum.entries(hromada).map(([k, v]) => {
@@ -171,9 +221,8 @@ export class Common {
     })
   }
 
-  readonly rating = (props: Partial<QuestionProps<I18n>>) => {
+  readonly rating = (props: Omit<QuestionProps<I18n>, 'type' | 'hint' | 'optional' | 'appearance' | 'options'>) => {
     return this.k.questionWithChoices({
-      name: 'how_would_you_describe_the_relationship_between_member_of_the_host_community',
       hint: 'leave_blank_if_none',
       optional: true,
       appearance: 'likert',
@@ -187,7 +236,7 @@ export class Common {
     })
   }
 
-  readonly incidents = (props: Pick<QuestionProps<I18n>, 'name' | 'label' | 'showIf' | 'showIfType'>): Question2<I18n>[] => {
+  readonly incidents = (props: Pick<QuestionProps<I18n>, 'showIfType' | 'showIf' | 'name' | 'label' | 'bold'>): Question2<I18n>[] => {
     return this.k.questionWithChoicesAndOtherSpecify({
       appearance: 'minimal',
       multiple: true,
@@ -221,19 +270,19 @@ export class Common {
     })
   }
 
-  readonly when = (props: Pick<QuestionProps<I18n>, 'label' | 'name' | 'showIf' | 'showIfType'>): Question2<I18n> => {
+  readonly when = (props: Pick<QuestionProps<I18n>, 'showIfType' | 'showIf' | 'name' | 'label' | 'bold'>): Question2<I18n> => {
     return this.k.questionWithChoices({
       ...props,
       choiceFilter: `tag=\${get_tag_if_is_displaced} or tag1=\${get_tag_if_is_displaced}`,
       options: [
-        {tag: 'all', tag1: 'displaced', name: 'predisplacement_or_in_the_area_of_origin'},
+        {tag: 'all', tag1: 'nondisplaced', name: 'predisplacement_or_in_the_area_of_origin'},
         {tag: 'all', name: 'during_the_displacement_journey'},
         {tag: 'all', name: 'in_displacement_location'},
       ]
     })
   }
 
-  readonly whoWherePerpetrators = (props: Pick<QuestionProps<I18n>, 'label' | 'name' | 'showIf' | 'showIfType'>): Question2<I18n>[] => {
+  readonly whoWerePerpetrators = (props: Pick<QuestionProps<I18n>, 'showIfType' | 'showIf' | 'name' | 'label' | 'bold'>): Question2<I18n>[] => {
     return this.k.questionWithChoicesAndOtherSpecify({
       ...props,
       defineExclusiveOption: 'unable_unwilling_to_answer',
@@ -253,12 +302,12 @@ export class Common {
     })
   }
 
-  readonly incidentsForm = (name: keyof I18n): Question2<I18n>[] => {
+  readonly incidentsForm = (props: Pick<QuestionProps<I18n>, 'name' | 'showIf' | 'showIfType'>): Question2<I18n>[] => {
     const id = Utils.makeid()
-    const showIf: ShowIfCondition<I18n> = {questionName: name, value: 'yes'}
+    const showIf: ShowIfCondition<I18n> = {questionName: props.name, value: 'yes'}
     return [
       this.k.questionWithChoices({
-        name: name,
+        ...props,
         appearance: 'horizontal-compact',
         options: ['yes', 'no', 'unable_unwilling_to_answer'],
       }),
@@ -266,17 +315,21 @@ export class Common {
         showIf,
         name: 'what_type_of_incidents_took_place' + id,
         label: 'what_type_of_incidents_took_place',
+        bold: false,
       }),
       this.when({
         showIf,
         name: 'when_did_the_incidents_occur' + id,
         label: 'when_did_the_incidents_occur',
+        bold: false,
       }),
-      ...this.whoWherePerpetrators({
+      ...this.whoWerePerpetrators({
         label: 'who_were_the_perpetrators_of_the_incident',
         name: 'who_were_the_perpetrators_of_the_incident' + id,
+        bold: false,
         showIf,
       }),
+      this.k.divider({showIf}),
     ]
   }
 

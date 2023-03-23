@@ -1,6 +1,6 @@
 import {Utils} from '../Utils'
-import {Choice, Form2, I18n, isShowIf, isShowIfCondition, KoboTheme, Question2, QuestionType, ShowIfCondition} from './FormCreator'
-import {Enum} from '@alexandreannic/ts-utils'
+import {Choice, Form2, I18n, isShowIf, isShowIfCondition, KoboTheme, Question2, QuestionType, ShowIf, ShowIfCondition} from './FormCreator'
+import {Enum, fnSwitch} from '@alexandreannic/ts-utils'
 
 export interface JSONForm<T extends I18n, Locale extends string> {
   meta: {
@@ -10,6 +10,7 @@ export interface JSONForm<T extends I18n, Locale extends string> {
   }
   questions: JSONQuestion<T, Locale>[]
   options: JSONChoices<T, Locale>[]
+  externalOptions?: Record<string, JSONChoices<T, Locale>[]>
 }
 
 export interface JSONChoices<L extends I18n, Locale extends string> {
@@ -57,8 +58,9 @@ interface QuestionWithI18n<T extends I18n, Locale extends string> extends Omit<Q
 }
 
 export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
-  static readonly formWidth = 620
-  private collectedOptions: {[key: string]: Choice<T>[]} = {}
+  static readonly formWidth = 630
+  private collectedExternalOptions: Record<string, Record<string, Choice<T>[]>> = {}
+  private collectedOptions: Record<string, Choice<T>[]> = {}
   private titlesIndex = 0
   private subTitlesIndex = 1
   private enumerationNamesIndex = new Map<string, string>()
@@ -109,16 +111,30 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
       ]
     })
     const options = this.mapXLSFormChoices(this.collectedOptions)
-    return {meta: form, questions, options}
+    const externalOptions = Object.entries(this.collectedExternalOptions).reduce((acc, [k, v]) => {
+      return {
+        ...acc,
+        [k]: this.mapXLSFormChoices(this.collectedExternalOptions[k])
+      }
+    }, {})
+    return {meta: form, questions, options, externalOptions}
   }
 
   private readonly buildQuestions = (questions: (Question2<T> | Question2<T>[])[]): JSONQuestion<T, Locale>[] => {
     return questions.flat()
       .map(q => {
         if (q.options) {
-          const id = Utils.makeid()
-          this.collectedOptions[id] = q.options
-          q.optionsId = id
+          if (q.moveOptionsToExternalFile) {
+            if (!this.collectedExternalOptions[q.moveOptionsToExternalFile]) {
+              this.collectedExternalOptions[q.moveOptionsToExternalFile] = {}
+            }
+            this.collectedExternalOptions[q.moveOptionsToExternalFile][q.moveOptionsToExternalFile] = q.options
+            q.optionsId = q.moveOptionsToExternalFile
+          } else {
+            const id = Utils.makeid()
+            this.collectedOptions[id] = q.options
+            q.optionsId = id
+          }
         }
         return q
       })
@@ -130,10 +146,24 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
       .map(this.mapQuestionToXLSForm)
   }
 
+  private readonly getFirstShowIfParent = (q: QuestionWithI18n<T, Locale>): keyof T | undefined => {
+    let showIf: ShowIfCondition<T>[] | ShowIfCondition<T> | ShowIf<T>[] | undefined = q.showIf
+    if (!showIf) return undefined
+    for (; ;) {
+      const r: ShowIfCondition<T> | ShowIf<T> = [showIf].flat()[0]!
+      if (isShowIfCondition(r)) {
+        return r.questionName
+      }
+      showIf = (r as ShowIf<T>).showIf
+    }
+  }
+
   private readonly applyQuestionNumeration = (q: QuestionWithI18n<T, Locale>): QuestionWithI18n<T, Locale> => {
     const ignoredType: QuestionType[] = [
+      'alert_warn',
+      'alert_info',
       'CALCULATE',
-      'DIVIDER'
+      'DIVIDER',
     ]
     if (ignoredType.includes(q.type)) {
       return q
@@ -142,8 +172,16 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
     const subTitles = this.subTitlesIndex
     const numeration = (() => {
       if (q.showIf) {
-        const parentName = ([q.showIf].flat(10)[0] as ShowIfCondition<I18n>).questionName as string
+        const parentName = this.getFirstShowIfParent(q) as string
         const parentNum = this.enumerationNamesIndex.get(parentName)
+        if (!parentNum) {
+          throw new Error(`Cannot find parent '${parentName}' for question '${q.name}'`)
+        }
+        const isParentInAnotherSection = +parentNum.split('.')[0] !== this.titlesIndex
+        if (isParentInAnotherSection) {
+          this.subTitlesIndex = this.subTitlesIndex + 1
+          return `${this.titlesIndex}.${subTitles}.`
+        }
         const childNum = (this.childEnumerationNamesIndex.get(parentName) ?? 0) + 1
         this.childEnumerationNamesIndex.set(parentName, childNum)
         return `${parentNum}${childNum}.`
@@ -185,7 +223,13 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
       choice_filter: q.choiceFilter,
       name: q.name as string,
       required: !q.optional,
-      type: this.mapQuestionTypeToXLSForm(q.type) + (q.optionsId ? ' ' + q.optionsId : ' '),
+      type: (() => {
+        let res = this.mapQuestionTypeToXLSForm(q.type)
+        if (q.moveOptionsToExternalFile) res += '_from_file'
+        if (q.optionsId) res += ' ' + q.optionsId
+        if (q.moveOptionsToExternalFile) res += '.csv'
+        return res
+      })(),
       relevant: this.mapRelevant(q),
       appearance: (q.type === 'TEXTAREA' ? 'multiline' : q.appearance ?? '') + (q.col ? ` w${q.col}` : ''),
       hint: q.hint,
@@ -211,9 +255,29 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
       ...q.bold && {'font-weight': 'bold'},
       ...q.bold === false && {'font-weight': 'normal'},
       ...q.color && {'color': q.color},
+      ...q.type.includes('alert_') && {
+        'border-radius': '8px',
+        'padding': '8px 12px',
+        display: 'block',
+      },
+      ...q.type === 'alert_info' && {
+        background: 'rgb(229, 246, 253)',
+        color: 'rgb(1, 67, 97)',
+      },
+      ...q.type === 'alert_warn' && {
+        background: 'rgb(255, 244, 229)',
+        color: 'rgb(102, 60, 0)',
+      }
+    }
+    const getAlertIcon = () => {
+      const icon = fnSwitch(q.type, {
+        'alert_info': 'ℹ️',
+        'alert_warn': '⚠️',
+      }, () => '')
+      return icon + '   '
     }
     const stringCss = Object.entries(css).map(([k, v]) => `${k}:${v}`).join(';')
-    q.label = q.label.map(_ => ({..._, text: `<span style="${stringCss}">${_.text}</span>`}))
+    q.label = q.label.map(_ => ({..._, text: `<span style="${stringCss}">${getAlertIcon() + _.text}</span>`}))
     return q
   }
 
@@ -242,6 +306,8 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
         return 'integer'
       case 'DECIMAL':
         return 'decimal'
+      case 'alert_info':
+      case 'alert_warn':
       case 'TITLE':
       case 'DIVIDER':
       case 'NOTE':
@@ -265,12 +331,12 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
         .map(condition => {
           if (isShowIf(condition)) return '(' + (this.mapRelevant(condition) ?? '') + ')'
           if (isShowIfCondition(condition)) {
-            const valueName = this.findQuestionByName(condition.questionName).options?.find(_ => _.name === condition.value)?.name as string
-            if (condition.op) {
-              return `\${${condition.questionName as string}}${condition.op ?? '='}'${valueName ?? condition.value}'`
+            const valueName = this.findQuestionByName(condition.questionName).options?.find(_ => _.name === condition.value)?.name as string | undefined
+            if (!valueName && valueName !== '""' && (condition.op === '=' || condition.op === '!=')) {
+              console.warn(`[WARNING] Options '${condition.value}' does not exist for question ${JSON.stringify(condition.questionName)}`)
             }
-            if (!valueName) {
-              throw new Error(`Options '${condition.value as string}' does not exist for question ${JSON.stringify(condition.questionName)}`)
+            if (condition.op) {
+              return `\${${condition.questionName}}${condition.op ?? '='}'${condition.value}'`
             }
             return `selected(\${${condition.questionName as string}}, '${valueName}')`
           }
@@ -279,9 +345,3 @@ export class JSONFormCompiler<T extends I18n, Locale extends string = string> {
     }
   }
 }
-
-// NaN
-// ${have_you_filled_out_this_form_before}='no' 
-// and ${present_yourself}='yes') 
-// and NaN${hh_sex_1}<'18' 
-// or ${hh_sex_2}<'18' or ${hh_sex_3}<'18' or ${hh_sex_4}<'18' or ${hh_sex_5}<'18' or ${hh_sex_6}<'18' or ${hh_sex_7}<'18' or ${hh_sex_8}<'18' or ${hh_sex_9}<'18')

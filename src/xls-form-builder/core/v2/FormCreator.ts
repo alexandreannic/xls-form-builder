@@ -19,6 +19,8 @@ export interface Section<L extends I18n> extends ShowIf<L> {
 export type QuestionTypeWithChoices = 'CHECKBOX' | 'RADIO'
 
 export type QuestionTypeWithoutOptions = 'TEXT' |
+  'alert_info' |
+  'alert_warn' |
   'TEXTAREA' |
   'DATE' |
   'INTEGER' |
@@ -40,7 +42,7 @@ type ShowIfType = 'and' | 'or'
 
 export interface ShowIf<L extends I18n> {
   showIf?: ShowIfCondition<L>[] | ShowIfCondition<L> | ShowIf<L>[]
-  showIfType?: ShowIfType
+  showIfType?: ShowIfType | ShowIfType[]
 }
 
 export const isShowIf = <T extends I18n>(_: any): _ is ShowIf<T> => {
@@ -53,7 +55,7 @@ export const isShowIfCondition = <T extends I18n>(_: any): _ is ShowIfCondition<
 export interface Question2<L extends I18n> extends ShowIf<L> {
   id?: string
   col?: number,
-  appearance?: 'minimal autocomplete' | 'autocomplete' | 'horizontal' | 'minimal' | 'horizontal-compact' | 'likert'
+  appearance?: 'month-year' | 'minimal autocomplete' | 'autocomplete' | 'horizontal' | 'minimal' | 'horizontal-compact' | 'likert'
   name: string
   default?: string
   calculation?: string
@@ -70,6 +72,7 @@ export interface Question2<L extends I18n> extends ShowIf<L> {
   bold?: boolean
   italic?: boolean
   color?: string
+  moveOptionsToExternalFile?: string
   size?: 'small' | 'normal' | 'big'
   borderTop?: boolean
 }
@@ -98,7 +101,7 @@ export const isQuestions = <L extends I18n>(s: Section<L> | Question2<L>): s is 
 
 export class FormCreator<L extends I18n> {
 
-  private readonly maxOptionsBeforeDropDown = 9
+  private readonly maxOptionsBeforeDropDown = 10
 
   constructor(private i18n: {
     specifyLabel: keyof L,
@@ -106,6 +109,22 @@ export class FormCreator<L extends I18n> {
     invalidEmail: keyof L,
     invalidPhone: keyof L,
   }) {
+  }
+
+  readonly genRelevant = (t: Pick<Question2<L>, 'showIf' | 'showIfType'> & Partial<Pick<Question2<L>, 'type'>>): string | undefined => {
+    if (t.showIf) {
+      return [t.showIf].flat()
+        .map(condition => {
+          if (isShowIf(condition)) return '(' + (this.genRelevant(condition) ?? '') + ')'
+          if (isShowIfCondition(condition)) {
+            if (condition.op) {
+              return `\${${condition.questionName}}${condition.op ?? '='}'${condition.value}'`
+            }
+            return `selected(\${${condition.questionName}}, '${condition.value}')`
+          }
+        })
+        .join(` ${t.showIfType ?? 'and'} `)
+    }
   }
 
   readonly calculate = (props: Pick<QuestionProps<L>, 'calculation'> & {name: string}) => {
@@ -116,23 +135,35 @@ export class FormCreator<L extends I18n> {
     })
   }
 
-  readonly divider = () => {
-    return this.question({type: 'DIVIDER', name: 'divider' + Utils.makeid()})
+  readonly alertInfo = (props: Omit<QuestionProps<L>, 'moveOptionsToExternalFile' | 'type'>) => {
+    return this.question({...props, type: 'alert_info'})
+  }
+
+  readonly alertWarn = (props: Omit<QuestionProps<L>, 'moveOptionsToExternalFile' | 'type'>) => {
+    return this.question({...props, type: 'alert_warn'})
+  }
+
+  readonly divider = (props: Partial<Omit<QuestionProps<L>, 'label' | 'type'>>) => {
+    return this.question({
+      type: 'DIVIDER',
+      name: props.name ?? ('divider' + Utils.makeid()),
+      ...props,
+    })
   }
 
   readonly section = (props: Section<L>): Section<L> => {
     return {...props}
   }
 
-  readonly note = (props: Omit<QuestionProps<L>, 'type'>) => {
+  readonly note = (props: Omit<QuestionProps<L>, 'moveOptionsToExternalFile' | 'type'>) => {
     return this.question({...props, type: 'NOTE'})
   }
 
-  readonly title = (props: Omit<QuestionProps<L>, 'type'>) => {
+  readonly title = (props: Omit<QuestionProps<L>, 'moveOptionsToExternalFile' | 'type'>) => {
     return this.question({...props, type: 'TITLE'})
   }
 
-  readonly label = (props: Omit<QuestionProps<L>, 'optional' | 'type'>) => {
+  readonly label = (props: Omit<QuestionProps<L>, 'moveOptionsToExternalFile' | 'optional' | 'type'>) => {
     return this.note({...props, bold: true})
   }
 
@@ -143,7 +174,7 @@ export class FormCreator<L extends I18n> {
     }
   }
 
-  readonly email = (props: Omit<QuestionProps<L>, 'type'>) => {
+  readonly email = (props: Omit<QuestionProps<L>, 'moveOptionsToExternalFile' | 'type'>) => {
     return this.question({
       ...props,
       type: 'TEXT',
@@ -152,7 +183,7 @@ export class FormCreator<L extends I18n> {
     })
   }
 
-  readonly phone = (props: Omit<QuestionProps<L>, 'type'>) => {
+  readonly phone = (props: Omit<QuestionProps<L>, 'moveOptionsToExternalFile' | 'type'>) => {
     return this.question({
       ...props,
       constraint: `regex(., '${Utils.regexp.phone}')`,
@@ -175,13 +206,13 @@ export class FormCreator<L extends I18n> {
   }): Question2<L> => {
     const options = props.options.map(_ => typeof _ === 'object' ? _ : ({name: _}))
     const exclusions = [props.defineExclusiveOption ?? []].flat()
-    const noExclusions = options.filter(_ => !exclusions.includes(_.name))
     return this.registerQuestion({
       appearance: props.options.length > this.maxOptionsBeforeDropDown ? 'minimal' : undefined,
       ...props,
       ...props.defineExclusiveOption && {
+        constraintMessage: 'cannot_have_options_checked_together',
         constraint: exclusions.map(_ =>
-          `not(selected(., '${_ as string}') and (${noExclusions.map(o => `selected(., '${o.name as string}')`).join(' or ')}))`,
+          `not(selected(., '${_ as string}') and (${options.filter(o => o.name !== _).map(o => `selected(., '${o.name as string}')`).join(' or ')}))`,
         ).join(' and ')
       },
       type: props.multiple ? 'CHECKBOX' : 'RADIO',

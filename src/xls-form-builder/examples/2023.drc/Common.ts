@@ -12,7 +12,7 @@ export class Common {
 
   static readonly maxHHComposition = 9
 
-  readonly showIfHaveAdultInHH = (sex: 'male' | 'female'): ShowIf<I18n> => {
+  readonly showIfHaveAdultInHHBySex = (sex: 'male' | 'female'): ShowIf<I18n> => {
     const showIf: ShowIf<I18n>[] = mapFor(Common.maxHHComposition, i => ({
       showIfType: 'and',
       showIf: [
@@ -23,7 +23,7 @@ export class Common {
     return {showIfType: 'or', showIf}
   }
 
-  readonly showIfHaveChildInHH = (sex: 'male' | 'female'): ShowIf<I18n> => {
+  readonly showIfHaveChildInHHBySex = (sex: 'male' | 'female'): ShowIf<I18n> => {
     const showIf: ShowIf<I18n>[] = mapFor(Common.maxHHComposition, i => ({
       showIfType: 'and',
       showIf: [
@@ -34,13 +34,26 @@ export class Common {
     return {showIfType: 'or', showIf}
   }
 
-  readonly showIfHaveMinorInHH = (): ShowIf<I18n> => {
+  readonly showIfHaveChildInHH = (): ShowIf<I18n> => {
     return {
       showIfType: 'or',
       showIf: mapFor(Common.maxHHComposition, i => {
         return {
           questionName: 'hh_age_' + (i + 1),
           op: '<',
+          value: 18
+        }
+      }) as ShowIfCondition<I18n>[]
+    }
+  }
+  
+  readonly showIfHaveAdultInHH = (): ShowIf<I18n> => {
+    return {
+      showIfType: 'or',
+      showIf: mapFor(Common.maxHHComposition, i => {
+        return {
+          questionName: 'hh_age_' + (i + 1),
+          op: '>=',
           value: 18
         }
       }) as ShowIfCondition<I18n>[]
@@ -177,7 +190,7 @@ export class Common {
   }
 
   readonly typeOfSite = () => {
-    return this.k.questionWithChoices({
+    return this.k.questionWithChoicesAndOtherSpecify({
       name: 'type_of_site',
       options: [
         'private_housing',
@@ -265,6 +278,7 @@ export class Common {
         'lack_of_confiscation_or_denial_of_civil_documentation',
         'denial_of_travel_documents',
         'denial_of_idp_registration',
+        'unable_unwilling_to_answer',
       ],
       ...props
     })
@@ -352,6 +366,7 @@ export class Common {
         'livelihood_support_vocational_training',
         'nfis',
         'none',
+        'unable_unwilling_to_answer',
       ],
       ...props,
     })

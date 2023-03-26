@@ -28,7 +28,7 @@ export const protHH = async () => {
     })
 
     const common = new Common(k)
-    const showIfHaveMinorInHH = common.showIfHaveMinorInHH()
+    const showIfHaveMinorInHH = common.showIfHaveChildInHH()
     // const showIfHaveNoMinorInHH = common.haveNoMinorInHH()
     const hasAccepted: ShowIf<I18n> = {
       showIfType: 'and',
@@ -113,6 +113,7 @@ export const protHH = async () => {
                 'ukrainian',
                 'stateless',
                 'non_ukrainian',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoicesAndOtherSpecify({
@@ -122,12 +123,14 @@ export const protHH = async () => {
                 'country_of_origin_azerbaijan',
                 'country_of_origin_moldovan',
                 'country_of_origin_romanian',
+                'unable_unwilling_to_answer',
               ],
             }),
             k.questionWithChoicesAndOtherSpecify({
               name: 'if_ukrainian_do_you_or_your_household_members_identify_as_member_of_a_minority_group',
               showIf: [{questionName: 'what_is_your_citizenship', value: 'ukrainian'}],
               options: [
+                'no',
                 'roma',
                 'hungarian',
                 'greek',
@@ -136,7 +139,6 @@ export const protHH = async () => {
                 'belorussian',
                 'azerbaijan',
                 'russian',
-                'no',
                 'unable_unwilling_to_answer',
               ],
             }),
@@ -146,6 +148,7 @@ export const protHH = async () => {
                 'ukrainian',
                 'russian',
                 'mixed_ukrainian_russian',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.question({
@@ -159,13 +162,13 @@ export const protHH = async () => {
               defineExclusiveOption: ['no', 'unable_unwilling_to_answer'],
               name: 'are_you_separated_from_any_of_your_households_members',
               options: [
+                'no',
                 'partner',
                 'child_lt_18',
                 'child_gte_18',
                 'mother',
                 'father',
                 'other_relative',
-                'no',
                 'unable_unwilling_to_answer',
               ]
             }),
@@ -202,16 +205,16 @@ export const protHH = async () => {
           return [
             k.questionWithChoices({
               name: 'do_you_have_a_household_member_that_has_a_lot_of_difficulty',
-              defineExclusiveOption: ['unable_unwilling_to_answer', 'no'],
+              defineExclusiveOption: ['no', 'unable_unwilling_to_answer'],
               multiple: true,
               options: [
+                'no',
                 'wg_seeing_even_if_wearing_glasses',
                 'wg_hearing_even_if_using_a_hearing_aid',
                 'wg_walking_or_climbing_steps',
                 'wg_remembering_or_concentrating',
                 'wg_selfcare_such_as_washing_all_over_or_dressing',
                 'wg_using_your_usual_language_have_difficulty_communicating_',
-                'no',
                 'unable_unwilling_to_answer',
               ],
             }),
@@ -227,6 +230,7 @@ export const protHH = async () => {
               name: 'do_you_or_anyone_in_your_household_have_a_disability_status_from_the_gov',
               defineExclusiveOption: ['no', 'unable_unwilling_to_answer'],
               options: [
+                'no', 
                 'status_registration_rejected_not_meeting_the_criteria_as_per_ukrainian_procedure',
                 'status_renewal_rejected',
                 'delays_in_registration_process',
@@ -235,7 +239,6 @@ export const protHH = async () => {
                 'inability_to_access_registration_safety_risks',
                 'unwilling_to_register',
                 'unaware_ofnot_familiar_with_the_procedure',
-                'no', 
                 'unable_unwilling_to_answer'
               ]
             }),
@@ -275,6 +278,7 @@ export const protHH = async () => {
                 'host_community_member',
                 'conflict_affected_person',
                 'idp',
+                'unable_unwilling_to_answer',
               ]
             }),
             common.location({
@@ -296,6 +300,7 @@ export const protHH = async () => {
                 'infrastructure_damagedestruction',
                 'seeking_family_reunification',
                 'fear_of_conscription',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.question({
@@ -317,6 +322,7 @@ export const protHH = async () => {
                 'government_supported_return',
                 'host_communitys_local_authorities_supported_return',
                 'own_means',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoices({
@@ -343,8 +349,8 @@ export const protHH = async () => {
                 'gbv_incident',
                 'extortion',
                 'hate_speech',
-                'unable_unwilling_to_answer',
                 'none',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoices({
@@ -383,6 +389,7 @@ export const protHH = async () => {
                 'increased_restored_service_availability_in_the_area_of_origin',
                 'repaired_restored_infrastructure_including_heating',
                 'repaired_housing',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoicesAndOtherSpecify({
@@ -408,6 +415,7 @@ export const protHH = async () => {
               options: [
                 'idp_returnee',
                 'refugee_returnee',
+                'unable_unwilling_to_answer',
               ],
             }),
             k.question({
@@ -440,6 +448,7 @@ export const protHH = async () => {
                 'ukrainian_government_or_local_authorities',
                 'government_or_local_authorities_from_the_host_community',
                 'own_means',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoicesAndOtherSpecify({
@@ -477,6 +486,7 @@ export const protHH = async () => {
                 'yes_asylum_request_registrated',
                 'yes_residence_permit',
                 'no',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoices({
@@ -495,6 +505,7 @@ export const protHH = async () => {
                 'yes_all_of_them',
                 'yes_some_of_them',
                 'no',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoices({
@@ -509,6 +520,7 @@ export const protHH = async () => {
                 'idp_certificate',
                 'idp_eregistration',
                 'no_proof_of_registration',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoices({
@@ -527,6 +539,7 @@ export const protHH = async () => {
               options: [
                 'delays_in_allowances_payment',
                 'change_of_place_of_residence',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoicesAndOtherSpecify({
@@ -544,6 +557,7 @@ export const protHH = async () => {
                 'costly_process',
                 'not_entitled_to_register_as_an_idp',
                 'fear_of_conscription',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoicesAndOtherSpecify({
@@ -641,6 +655,7 @@ export const protHH = async () => {
                 'risks_of_arbitrary_arrest_detention',
                 'risks_of_abduction_or_enforced_disappearance',
                 'risks_of_sexual_violence_and_exploitation',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoices({
@@ -683,6 +698,7 @@ export const protHH = async () => {
                 'tension_over_access_to_humanitarian_assistance',
                 'tension_over_access_to_services_and_or_employment_opportunities',
                 'tension_over_conscription_procedures',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoicesAndOtherSpecify({
@@ -703,6 +719,7 @@ export const protHH = async () => {
                 'dispute_or_conflict_over_livelihood_or_other_financial_resources',
                 'dispute_or_conflict_over_ethic_political_or_social_issues',
                 'no_incident_experienced',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoicesAndOtherSpecify({
@@ -719,7 +736,8 @@ export const protHH = async () => {
                 'intercommunity_tensions',
                 'lack_of_transportationfinancial_resources_to_pay_transportation',
                 'reduced_mobility_linked_with_health_issues_or_disability',
-                'no', 'unable_unwilling_to_answer'
+                'no', 
+                'unable_unwilling_to_answer'
               ]
             })
           ]
@@ -736,19 +754,19 @@ export const protHH = async () => {
             }),
             common.incidentsForm({
               name: 'has_any_adult_male_member_of_your_household_experienced_any_form_of_violence_within_the_last_6_months',
-              ...common.showIfHaveAdultInHH('male'),
+              ...common.showIfHaveAdultInHHBySex('male'),
             }),
             common.incidentsForm({
               name: 'has_any_adult_female_member_of_your_household_experienced_any_protectionright_violation_incident',
-              ...common.showIfHaveAdultInHH('female'),
+              ...common.showIfHaveAdultInHHBySex('female'),
             }),
             common.incidentsForm({
               name: 'has_any_boy_member_of_your_household_experienced_any_protectionright_violation_incident',
-              ...common.showIfHaveChildInHH('male'),
+              ...common.showIfHaveChildInHHBySex('male'),
             }),
             common.incidentsForm({
               name: 'has_any_girl_member_of_your_household_experienced_any_protectionright_violation_incident',
-              ...common.showIfHaveChildInHH('female'),
+              ...common.showIfHaveChildInHHBySex('female'),
             }),
             common.incidentsForm({
               name: 'has_any_member_of_your_household_experienced_any_protectionright_violation_incident',
@@ -782,6 +800,7 @@ export const protHH = async () => {
             k.questionWithChoicesAndOtherSpecify({
               name: 'is_are_any_adult_memberof_your_household_displaying_any_of_the_following_signs',
               appearance: 'minimal',
+              ...common.showIfHaveAdultInHH(),
               multiple: true,
               defineExclusiveOption: ['unable_unwilling_to_answer', 'no_sign_of_psychological_distress'],
               options: [
@@ -799,6 +818,7 @@ export const protHH = async () => {
             }),
             k.questionWithChoicesAndOtherSpecify({
               name: 'is_are_any_child_member_of_your_household_displaying_any_of_the_following_signs',
+              ...common.showIfHaveChildInHH(),
               appearance: 'minimal',
               multiple: true,
               defineExclusiveOption: ['unable_unwilling_to_answer', 'no_sign_of_psychological_distress'],
@@ -853,6 +873,7 @@ export const protHH = async () => {
                 'language_barriers',
                 'requirement_for_civil_documentation',
                 'poor_quality_of_the_services_provided',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoicesAndOtherSpecify({
@@ -907,6 +928,7 @@ export const protHH = async () => {
                 'cash_from_humanitarians',
                 'evacuation_compensation',
                 'none',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoices({
@@ -921,6 +943,7 @@ export const protHH = async () => {
                 'between_9001_12000_UAH',
                 'between_12001_15000_UAH',
                 'more_than_15000_UAH',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoices({
@@ -931,6 +954,7 @@ export const protHH = async () => {
                 'yes_a_lot',
                 'yes_somewhat',
                 'no',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoicesAndOtherSpecify({
@@ -994,6 +1018,7 @@ export const protHH = async () => {
                 'online_education',
                 'education_in_school',
                 'hybrid_mode',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoicesAndOtherSpecify({
@@ -1044,6 +1069,7 @@ export const protHH = async () => {
                 'collective_shelter_',
                 'privatelyowned_collective_shelter',
                 'no_shelter',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoicesAndOtherSpecify({
@@ -1082,6 +1108,7 @@ export const protHH = async () => {
                 'partially_damaged_destroyed',
                 'severely_damaged_destroyed',
                 'unfinished',
+                'unable_unwilling_to_answer',
               ]
             }),
             k.questionWithChoices({

@@ -46,7 +46,7 @@ export const i18n_en = {
   staff_to_insert_their_DRC_office: 'Staff to insert their DRC office',
   kharkiv: 'Kharkiv',
   mykolaiv: 'Mykolaiv',
-  sumi: 'Sumi',
+  sumi: 'Sumy',
   kyiv: 'Kyiv',
   dnipro: 'Dnipro',
   lviv: 'Lviv',
